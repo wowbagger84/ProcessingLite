@@ -20,4 +20,6 @@ This mini project aims to recreate some basic processing functions in Unity3D, u
 ## Future Commands
 
 - Circle()
+- Ellipse()
 - Stroke()
+- Square()
