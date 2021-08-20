@@ -56,11 +56,13 @@ namespace ProcessingLite
 
 		public void StrokeWeight(float weight) => PStrokeWeight = weight;
 
-		public void Stroke(int rgb)             => Stroke(rgb, rgb, rgb);
-		public void Stroke(int r, int g, int b) => PStroke = new Color32((byte) r, (byte) g, (byte) b, 255);
+		public void Stroke(int rgb, int a = 255) => Stroke(rgb, rgb, rgb, a);
+		public void Stroke(int r, int g, int b, int a = 255) =>
+			PStroke = new Color32((byte) r, (byte) g, (byte) b, (byte) a);
 
-		public void Fill(int rgb)             => Fill(rgb, rgb, rgb);
-		public void Fill(int r, int g, int b) => PFill = new Color32((byte) r, (byte) g, (byte) b, 255);
+		public void Fill(int rgb, int a = 255) => Fill(rgb, rgb, rgb, a);
+		public void Fill(int r, int g, int b, int a = 255) =>
+			PFill = new Color32((byte) r, (byte) g, (byte) b, (byte) a);
 
 #endregion
 	}
