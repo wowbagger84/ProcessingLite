@@ -117,8 +117,9 @@ namespace ProcessingLite
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
 
 			//apply size and position
-			newSpriteRenderer.transform.position = new Vector3((x1 + x2) / 2, (y1 + y2) / 2, 0);
-			newSpriteRenderer.size               = new Vector2(Mathf.Abs(x1 - x2), Mathf.Abs(y1 - y2));
+			var transform = newSpriteRenderer.transform;
+			transform.position   = new Vector3((x1 + x2) / 2f,     (y1 + y2) / 2f,     0f);
+			transform.localScale = new Vector3(Mathf.Abs(x1 - x2), Mathf.Abs(y1 - y2), 1f);
 
 			//Increment to next line in list
 			_currentLine = (_currentLine + 1) % GP21.MAXNumberOfObjects;
@@ -130,8 +131,9 @@ namespace ProcessingLite
 			newSpriteRenderer.color = GP21.PFill;
 
 			//apply size and position
-			newSpriteRenderer.transform.position = new Vector3(x, y, 0);
-			newSpriteRenderer.size               = new Vector2(extent, extent);
+			var transform = newSpriteRenderer.transform;
+			transform.position   = new Vector3(x,      y,      0f);
+			transform.localScale = new Vector3(extent, extent, 1f);
 
 			//Increment to next line in list
 			_currentLine = (_currentLine + 1) % GP21.MAXNumberOfObjects;
