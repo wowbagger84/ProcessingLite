@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace ProcessingLite
 {
@@ -19,8 +21,7 @@ namespace ProcessingLite
 		private        PLine     _pLine;
 		private        PRect     _pRect;
 		private static Transform _holder;
-
-		public GP21() => _holder = null;
+		private        int       _background = 2;
 
 		public static Transform Holder {
 			get {
@@ -30,7 +31,37 @@ namespace ProcessingLite
 			}
 		}
 
+		public GP21() => _holder = null;
+
+		private void LateUpdate()
+		{
+			if (_background > -1) {
+				if (_background == 0) Camera.main.clearFlags = CameraClearFlags.Nothing;
+				_background--;
+				if (_background == 1) return;
+			}
+
+			ResetRenderers();
+		}
+
+		private void ResetRenderers()
+		{
+			_pLine?.LateUpdate();
+			_pRect?.LateUpdate();
+		}
+
 #region draw functions
+
+		public void Background(int rgb)             => Background(rgb, rgb, rgb);
+		public void Background(int r, int g, int b) => Background(new Color32((byte) r, (byte) g, (byte) b, 255));
+
+		public void Background(Color color)
+		{
+			Camera.main.backgroundColor = color;
+			Camera.main.clearFlags      = CameraClearFlags.Color;
+			_background                 = Math.Max(1, _background);
+			ResetRenderers();
+		}
 
 		public void Line(float x1, float y1, float x2, float y2)
 		{
@@ -54,26 +85,46 @@ namespace ProcessingLite
 
 #region Change properties
 
-		public void StrokeWeight(float weight) => PStrokeWeight = weight;
+		public void StrokeWeight(float weight) => PStrokeWeight = Mathf.Max(weight, 0f);
 
 		public void Stroke(int rgb, int a = 255) => Stroke(rgb, rgb, rgb, a);
+
 		public void Stroke(int r, int g, int b, int a = 255) =>
 			PStroke = new Color32((byte) r, (byte) g, (byte) b, (byte) a);
 
 		public void Fill(int rgb, int a = 255) => Fill(rgb, rgb, rgb, a);
+
 		public void Fill(int r, int g, int b, int a = 255) =>
 			PFill = new Color32((byte) r, (byte) g, (byte) b, (byte) a);
 
 #endregion
 	}
 
-	public class PLine
+	public interface IObjectPooling
 	{
-		private          int                _currentLine;
+		int  CurrentID { get; set; }
+		void LateUpdate();
+	}
+
+	public class PLine : IObjectPooling
+	{
+		public int CurrentID { get; set; }
+
+		public void LateUpdate()
+		{
+			for (int i = CurrentID; i < _lines.Count; i++) {
+				if (_lines[CurrentID].gameObject.activeSelf)
+					_lines[CurrentID].gameObject.SetActive(false);
+				else break;
+			}
+
+			CurrentID = 0;
+		}
+
 		private          Transform          _holder;
 		private          Material           _material;
 		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
-		private          Material           GetMaterial() => _material = new Material(Shader.Find("Unlit/Texture"));
+		private          Material           GetMaterial() => _material = new Material(Shader.Find("Sprites/Default"));
 
 		public void Line(float x1, float y1, float x2, float y2) => Line(new Vector2(x1, y1), new Vector2(x2, y2));
 
@@ -82,12 +133,17 @@ namespace ProcessingLite
 			LineRenderer newLineRenderer;
 
 			//Check for line from list, re-use or create new.
-			if (_currentLine + 1 > _lines.Count || _lines[_currentLine] is null) {
-				var newObject = new GameObject("Line" + _currentLine.ToString("000"));
-				newObject.transform.parent = _holder ? _holder : _holder = GP21.Holder;
-				newLineRenderer            = newObject.AddComponent<LineRenderer>();
+			if (CurrentID + 1 > _lines.Count || _lines[CurrentID] is null) {
+				var newObject = new GameObject("Line" + (CurrentID + 1).ToString("000"));
+				newObject.transform.parent        = _holder ? _holder : _holder = GP21.Holder;
+				newLineRenderer                   = newObject.AddComponent<LineRenderer>();
+				newLineRenderer.material          = _material ?? GetMaterial();
+				newLineRenderer.shadowCastingMode = ShadowCastingMode.Off;
 				_lines.Add(newLineRenderer);
-			} else newLineRenderer = _lines[_currentLine];
+			} else {
+				newLineRenderer = _lines[CurrentID];
+				newLineRenderer.gameObject.SetActive(true);
+			}
 
 			//Apply settings
 			newLineRenderer.SetPosition(0, startPos);
@@ -96,17 +152,28 @@ namespace ProcessingLite
 			newLineRenderer.startWidth = GP21.PStrokeWeight * 0.1f;
 			newLineRenderer.endWidth   = GP21.PStrokeWeight * 0.1f;
 
-			newLineRenderer.material   = _material ?? GetMaterial();
 			newLineRenderer.startColor = newLineRenderer.endColor = GP21.PStroke;
 
 			//Increment to next line in list
-			_currentLine = (_currentLine + 1) % GP21.MAXNumberOfObjects;
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 	}
-
-	public class PRect
+	
+	public class PRect : IObjectPooling
 	{
-		private          int                  _currentLine;
+		public int CurrentID { get; set; }
+
+		public void LateUpdate()
+		{
+			for (int i = CurrentID; i < _sprite.Count; i++) {
+				if (_sprite[CurrentID].gameObject.activeSelf)
+					_sprite[CurrentID].gameObject.SetActive(false);
+				else break;
+			}
+
+			CurrentID = 0;
+		}
+
 		private          Transform            _holder;
 		private          Sprite               _squareTexture;
 		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
@@ -124,7 +191,7 @@ namespace ProcessingLite
 			transform.localScale = new Vector3(Mathf.Abs(x1 - x2), Mathf.Abs(y1 - y2), 1f);
 
 			//Increment to next line in list
-			_currentLine = (_currentLine + 1) % GP21.MAXNumberOfObjects;
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
 		public void Square(float x, float y, float extent)
@@ -138,13 +205,17 @@ namespace ProcessingLite
 			transform.localScale = new Vector3(extent, extent, 1f);
 
 			//Increment to next line in list
-			_currentLine = (_currentLine + 1) % GP21.MAXNumberOfObjects;
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
 		private SpriteRenderer GetSpriteRenderer()
 		{
-			if (_currentLine < _sprite.Count && _sprite[_currentLine] is { }) return _sprite[_currentLine];
-			var newObject = new GameObject("Rect" + _currentLine.ToString("000"));
+			if (CurrentID < _sprite.Count && _sprite[CurrentID] is { }) {
+				_sprite[CurrentID].gameObject.SetActive(true);
+				return _sprite[CurrentID];
+			}
+
+			var newObject = new GameObject("Rect" + (CurrentID + 1).ToString("000"));
 			newObject.transform.parent = _holder ? _holder : _holder = GP21.Holder;
 			var newSpriteRenderer = newObject.AddComponent<SpriteRenderer>();
 			newSpriteRenderer.sprite = _squareTexture ?? GetSquareTexture();
