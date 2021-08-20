@@ -1,13 +1,13 @@
 # ProcessingLite
 
-This mini project aims to recreate some basic processing functions in Unity3D, using a single drag and drop file.
+This mini-project aims to recreate some basic processing functions in Unity3D, using a single drag and drop file.
 
 ## Useage
 
 1. Download the ProcessingLite.cs file.
 2. Drag and drop the ProcessingLite.cs file into your unity project.
 3. Change inherence from the class MonoBehaviour to ProcessingLite.  
-  (You will still have all MonoBehaviour functionality).
+   (You will still have all MonoBehaviour functionality).
 4. Use the supported commands in Start or Update.
 
 
@@ -15,11 +15,11 @@ This mini project aims to recreate some basic processing functions in Unity3D, u
 
 - Line()
 - Rect()
-
+- Square()
 
 ## Future Commands
 
 - Circle()
 - Ellipse()
+- Fill()
 - Stroke()
-- Square()

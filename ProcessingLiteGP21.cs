@@ -1,126 +1,151 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
 namespace ProcessingLite
 {
+	/// <summary>
+	/// Base ProcessingLite class.
+	/// For Unity 2020 and newer.
+	/// </summary>
 	public class GP21 : MonoBehaviour
 	{
-		public int maxNumberOfObjects = 500;
-		public static float StrokeWeight { get; set; }      //Processing
-		public static Color Stroke { get; set; }            //Processing
-		public static Color Fill { get; set; }              //Processing
+		public const  int   MAXNumberOfObjects = 500;
+		public static float PStrokeWeight      = 1;           //Processing
+		public static Color PStroke            = Color.white; //Processing
+		public static Color PFill              = Color.black; //Processing
 
 		//Private variables
-		private PLine pLine;
-		static private Transform holder;
+		private        PLine     _pLine;
+		private        PRect     _pRect;
+		private static Transform _holder;
 
-		static public Transform Holder
-		{
-			get
-			{
-				if (holder is null)
-				{
-					var tmp = new GameObject("Holder");
-					holder = tmp.transform;
-				}
+		public GP21() => _holder = null;
 
-				return holder;
+		public static Transform Holder {
+			get {
+				if (_holder is { }) return _holder;
+				var tmp = new GameObject("Holder");
+				return _holder = tmp.transform;
 			}
 		}
 
-		public void Line(float x1, float y1, float x2, float y2) => pLine.Line(x1, y1, x2, y2);
-	}
-
-	public class PLine : MonoBehaviour
-	{
-		int currentLine = 0;
-		Transform holder;
-		Material material;
-		Sprite squareTexture;
-
-		public PLine()
-		{
-			holder = GP21.Holder;
-			material = new Material(Shader.Find("Unlit/Texture"));
-			squareTexture = AssetDatabase.LoadAssetAtPath<Sprite>("Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Textures/Square.png");
-		}
+#region draw functions
 
 		public void Line(float x1, float y1, float x2, float y2)
 		{
-			Line(new Vector2(x1, y1), new Vector2(x2, y2));
+			_pLine ??= new PLine();
+			_pLine.Line(x1, y1, x2, y2);
 		}
 
-		public void Line(Vector2 startPos, Vector2 endPos, float width = 1)
+		public void Rect(float x1, float y1, float x2, float y2)
 		{
-			//if (currentLine < maxNumberOfObjects)
-			//{
-			//	if (lines[currentLine] == null)
-			//	{
-			//		//Check for line from list, re-use or create new.
-			//		var newObject = new GameObject("Line");
-			//		newObject.transform.parent = holder;
-			//		var newLineRenderer = newObject.AddComponent<LineRenderer>();
-			//	}
-			//}
+			_pRect ??= new PRect();
+			_pRect.Rect(x1, y1, x2, y2);
+		}
+
+		public void Square(float x, float y, float extent)
+		{
+			_pRect ??= new PRect();
+			_pRect.Square(x, y, extent);
+		}
+
+#endregion
+
+#region Change properties
+
+		public void StrokeWeight(float weight) => PStrokeWeight = weight;
+
+		public void Stroke(int rgb)             => Stroke(rgb, rgb, rgb);
+		public void Stroke(int r, int g, int b) => PStroke = new Color32((byte) r, (byte) g, (byte) b, 255);
+
+		public void Fill(int rgb)             => Fill(rgb, rgb, rgb);
+		public void Fill(int r, int g, int b) => PFill = new Color32((byte) r, (byte) g, (byte) b, 255);
+
+#endregion
+	}
+
+	public class PLine
+	{
+		private          int                _currentLine;
+		private          Transform          _holder;
+		private          Material           _material;
+		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
+		private          Material           GetMaterial() => _material = new Material(Shader.Find("Unlit/Texture"));
+
+		public void Line(float x1, float y1, float x2, float y2) => Line(new Vector2(x1, y1), new Vector2(x2, y2));
+
+		private void Line(Vector2 startPos, Vector2 endPos)
+		{
+			LineRenderer newLineRenderer;
 
 			//Check for line from list, re-use or create new.
-			var newObject = new GameObject("Line");
-			newObject.transform.parent = holder;
-			var newLineRenderer = newObject.AddComponent<LineRenderer>();
+			if (_currentLine + 1 > _lines.Count || _lines[_currentLine] is null) {
+				var newObject = new GameObject("Line" + _currentLine.ToString("000"));
+				newObject.transform.parent = _holder ? _holder : _holder = GP21.Holder;
+				newLineRenderer            = newObject.AddComponent<LineRenderer>();
+				_lines.Add(newLineRenderer);
+			} else newLineRenderer = _lines[_currentLine];
 
 			//Apply settings
 			newLineRenderer.SetPosition(0, startPos);
 			newLineRenderer.SetPosition(1, endPos);
 
-			newLineRenderer.startWidth = width * 0.1f;
-			newLineRenderer.endWidth = width * 0.1f;
+			newLineRenderer.startWidth = GP21.PStrokeWeight * 0.1f;
+			newLineRenderer.endWidth   = GP21.PStrokeWeight * 0.1f;
 
-			newLineRenderer.material = material;
-			newLineRenderer.startColor = GP21.Stroke;
-			newLineRenderer.endColor = GP21.Stroke;
+			newLineRenderer.material   = _material ?? GetMaterial();
+			newLineRenderer.startColor = newLineRenderer.endColor = GP21.PStroke;
 
 			//Increment to next line in list
-			currentLine++;
-		}
-
-		private void LateUpdate()
-		{
-			currentLine = 0;
+			_currentLine = (_currentLine + 1) % GP21.MAXNumberOfObjects;
 		}
 	}
 
-	//public class PRect : GP21
-	//{
-	//	private void Init()
-	//	{
-	//		var tmp = new GameObject("Holder");
-	//		holder = tmp.transform;
-	//		Debug.Log(holder);
-	//		material = new Material(Shader.Find("Unlit/Texture"));
-	//		squareTexture = AssetDatabase.LoadAssetAtPath<Sprite>("Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Textures/Square.png");
+	public class PRect
+	{
+		private          int                  _currentLine;
+		private          Transform            _holder;
+		private          Sprite               _squareTexture;
+		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
 
-	//		init = true;
-	//	}
+		private Sprite GetSquareTexture() => _squareTexture = AssetDatabase.LoadAssetAtPath<Sprite>(
+			"Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Textures/Square.png");
 
-	//	public void Rect(float x1, float y1, float x2, float y2)
-	//	{
-	//		if (!init)
-	//			Init();
+		public void Rect(float x1, float y1, float x2, float y2)
+		{
+			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
 
-	//		var newObject = new GameObject("Rect");
-	//		newObject.transform.parent = holder;
-	//		newObject.transform.position = new Vector3((x1 + x2) / 2, (y1 + y2) / 2, 0);
-	//		var newSpriteRenderer = newObject.AddComponent<SpriteRenderer>();
-	//		newSpriteRenderer.sprite = squareTexture;
-	//		newSpriteRenderer.color = Fill;
+			//apply size and position
+			newSpriteRenderer.transform.position = new Vector3((x1 + x2) / 2, (y1 + y2) / 2, 0);
+			newSpriteRenderer.size               = new Vector2(Mathf.Abs(x1 - x2), Mathf.Abs(y1 - y2));
 
-	//		float width = Mathf.Abs(x1 - x2);
-	//		float height = Mathf.Abs(y1 - y2);
+			//Increment to next line in list
+			_currentLine = (_currentLine + 1) % GP21.MAXNumberOfObjects;
+		}
 
-	//		newObject.transform.localScale = new Vector3(width, height, 1);
-	//	}
-	//}
+		public void Square(float x, float y, float extent)
+		{
+			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
+			newSpriteRenderer.color = GP21.PFill;
+
+			//apply size and position
+			newSpriteRenderer.transform.position = new Vector3(x, y, 0);
+			newSpriteRenderer.size               = new Vector2(extent, extent);
+
+			//Increment to next line in list
+			_currentLine = (_currentLine + 1) % GP21.MAXNumberOfObjects;
+		}
+
+		private SpriteRenderer GetSpriteRenderer()
+		{
+			if (_currentLine < _sprite.Count && _sprite[_currentLine] is { }) return _sprite[_currentLine];
+			var newObject = new GameObject("Rect" + _currentLine.ToString("000"));
+			newObject.transform.parent = _holder ? _holder : _holder = GP21.Holder;
+			var newSpriteRenderer = newObject.AddComponent<SpriteRenderer>();
+			newSpriteRenderer.sprite = _squareTexture ?? GetSquareTexture();
+			_sprite.Add(newSpriteRenderer);
+			return newSpriteRenderer;
+		}
+	}
 }
-
