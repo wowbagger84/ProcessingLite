@@ -17,13 +17,19 @@ This is made for Unity3D version 2020.x but is largely untested.
 - Line()
 - Rect()
 - Square()
-
+- Fill()
+- NoFill()  
+- Stroke()
+- NoStroke()
+- StrokeWeight()
+- Background()
+- BeginShape()
+- Vertex()
+- EndShape()
 
 ## Future Commands
 - Circle()
 - Ellipse()
-- Fill()
-- Stroke()
 
 
 ## Contributions
