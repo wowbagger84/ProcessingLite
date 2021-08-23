@@ -7,8 +7,8 @@ using UnityEngine.Rendering;
 namespace ProcessingLite
 {
 	/// <summary>
-	/// Base ProcessingLite class.
-	/// For Unity 2020 and newer.
+	///     Base ProcessingLite class.
+	///     For Unity 2020 and newer.
 	/// </summary>
 	public class GP21 : MonoBehaviour
 	{
@@ -17,55 +17,24 @@ namespace ProcessingLite
 		public static Color PStroke            = Color.white; //Processing
 		public static Color PFill              = Color.black; //Processing
 
-		public static bool DrawStroke = true;
-		public static bool DrawFill   = true;
-		
-		public const  float ZOffset     = -0.001f;
-		public static float DrawZOffset = 0;
+		public static bool     DrawStroke = true;
+		public static bool     DrawFill   = true;
+		private       PEllipse _pEllipse;
 
 		//Private variables
 		private PLine  _pLine;
 		private PRect  _pRect;
 		private PShape _pShape;
 
-		private static Transform _holder;
-		private        int       _background = 2;
-
-
-		public static Transform Holder {
-			get {
-				if (_holder is { }) return _holder;
-				var tmp = new GameObject("Holder");
-				return _holder = tmp.transform;
-			}
-		}
-
-		public GP21()
-		{
-			#if !UNITY_2020_1_OR_NEWER
-			Debug.LogError("Unity version not supported");
-			#endif
-			_holder = null;
-		}
-
-		private void LateUpdate()
-		{
-			if (_background > -1) {
-				if (_background == 0) Camera.main.clearFlags = CameraClearFlags.Nothing;
-				_background--;
-				if (_background == 1) return;
-			}
-
-			ResetRenderers();
-		}
+		public GP21() => ProcessingLiteGP21.Resets += ResetRenderers;
+		private void OnDestroy() => ProcessingLiteGP21.Resets -= ResetRenderers;
 
 		private void ResetRenderers()
 		{
 			_pLine?.LateUpdate();
 			_pRect?.LateUpdate();
 			_pShape?.LateUpdate();
-
-			DrawZOffset = 0;
+			_pEllipse?.LateUpdate();
 		}
 
 
@@ -76,10 +45,10 @@ namespace ProcessingLite
 
 		public void Background(Color color)
 		{
-			Camera.main.backgroundColor = color;
-			Camera.main.clearFlags      = CameraClearFlags.Color;
-			_background                 = Math.Max(1, _background);
-			ResetRenderers();
+			Camera.main.backgroundColor   = color;
+			Camera.main.clearFlags        = CameraClearFlags.Color;
+			ProcessingLiteGP21.Background = Math.Max(1, ProcessingLiteGP21.Background);
+			ProcessingLiteGP21.EarlyReset();
 		}
 
 		public void Line(float x1, float y1, float x2, float y2)
@@ -92,23 +61,41 @@ namespace ProcessingLite
 		{
 			_pRect ??= new PRect();
 			_pRect.Rect(x1, y1, x2, y2);
-			if (DrawStroke) {
-				_pShape.ShapeKeys = new List<Vector2>(
-					new[] {
-						new Vector2(x1, y1),
-						new Vector2(x1, y2),
-						new Vector2(x2, y2),
-						new Vector2(x2, y1),
-					});
-				_pShape.ShapeMode = PShapeMode.Default;
-				_pShape.Shape(true, false);
-			}
+			if (!DrawStroke) return;
+			_pShape.ShapeKeys = new List<Vector2>(
+				new[] {
+					new Vector2(x1, y1),
+					new Vector2(x1, y2),
+					new Vector2(x2, y2),
+					new Vector2(x2, y1)
+				});
+			_pShape.ShapeMode = PShapeMode.Default;
+			_pShape.Shape(true, false);
 		}
 
 		public void Square(float x, float y, float extent)
 		{
 			_pRect ??= new PRect();
 			_pRect.Square(x, y, extent);
+		}
+
+		public void Ellipse(float x, float y, float height, float width)
+		{
+			_pEllipse ??= new PEllipse();
+			if (DrawStroke) {
+				_pEllipse.Ellipse(x, y, height + PStrokeWeight / 8f, width + PStrokeWeight / 8f, true);
+				_pEllipse.Ellipse(x, y, height - PStrokeWeight / 8f, width - PStrokeWeight / 8f);
+			} else _pEllipse.Ellipse(x, y, height, width);
+		}
+
+		public void Circle(float x, float y, float diameter)
+		{
+			_pEllipse ??= new PEllipse();
+			_pEllipse.Circle(x, y, diameter);
+			if (DrawStroke) {
+				_pEllipse.Circle(x, y, diameter + PStrokeWeight / 8f, true);
+				_pEllipse.Circle(x, y, diameter - PStrokeWeight / 8f);
+			} else _pEllipse.Circle(x, y, diameter);
 		}
 
 		public void BeginShape(PShapeMode mode = PShapeMode.Default)
@@ -185,6 +172,56 @@ namespace ProcessingLite
 #endregion
 	}
 
+	public class ProcessingLiteGP21 : MonoBehaviour
+	{
+		public delegate void LateReset();
+
+		public const  float ZOffset    = -0.001f; //offset between objects in depth.
+		public static int   Background = 2;
+		public static float DrawZOffset; //current offset
+
+		private static Transform _holder;
+
+
+		private ProcessingLiteGP21()
+		{
+			#if !UNITY_2020_1_OR_NEWER
+			Debug.LogError("Unity version not supported");
+			#endif
+		}
+
+		public static Transform Holder {
+			get {
+				if (_holder is { }) return _holder;
+				var tmp = new GameObject("Holder");
+				tmp.AddComponent<ProcessingLiteGP21>();
+				return _holder = tmp.transform;
+			}
+		}
+
+		private void LateUpdate()
+		{
+			if (Background > -1) {
+				if (Background == 0) Camera.main.clearFlags = CameraClearFlags.Nothing;
+				Background--;
+				if (Background == 1) return;
+			}
+
+			EarlyReset();
+		}
+
+		private void OnDestroy() => _holder = null;
+
+		public static event LateReset Resets;
+
+
+		public static void EarlyReset()
+		{
+			DrawZOffset = 0;
+			Resets?.Invoke();
+		}
+	}
+
 	public interface IObjectPooling
 	{
 		int  CurrentID { get; set; }
@@ -193,36 +230,36 @@ namespace ProcessingLite
 
 	public class PLine : IObjectPooling
 	{
-		public int CurrentID { get; set; }
+		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
+
+		private Transform _holder;
+		private Material  _material;
+		public  int       CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
-			for (int i = CurrentID; i < _lines.Count; i++) {
+			for (int i = CurrentID; i < _lines.Count; i++)
 				if (_lines[i].gameObject.activeSelf)
 					_lines[i].gameObject.SetActive(false);
 				else break;
-			}
 
 			CurrentID = 0;
 		}
 
-		private          Transform          _holder;
-		private          Material           _material;
-		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
-		private          Material           GetMaterial() => _material = new Material(Shader.Find("Sprites/Default"));
+		private Material GetMaterial() => _material = new Material(Shader.Find("Sprites/Default"));
 
 		public void Line(float x1, float y1, float x2, float y2) => Line(new Vector2(x1, y1), new Vector2(x2, y2));
 
 		private void Line(Vector2 startPos, Vector2 endPos)
 		{
-			GP21.DrawZOffset += GP21.ZOffset;
+			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
 
 			LineRenderer newLineRenderer;
 
 			//Check for line from list, re-use or create new.
 			if (CurrentID + 1 > _lines.Count || _lines[CurrentID] is null) {
 				var newObject = new GameObject("Line" + (_lines.Count + 1).ToString("000"));
-				newObject.transform.parent        = _holder ? _holder : _holder = GP21.Holder;
+				newObject.transform.parent        = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
 				newLineRenderer                   = newObject.AddComponent<LineRenderer>();
 				newLineRenderer.material          = _material ?? GetMaterial();
 				newLineRenderer.shadowCastingMode = ShadowCastingMode.Off;
@@ -233,8 +270,8 @@ namespace ProcessingLite
 				newLineRenderer = _lines[CurrentID];
 				newLineRenderer.gameObject.SetActive(true);
 			}
-			
-			newLineRenderer.transform.position = new Vector3(0, 0, GP21.DrawZOffset);
+
+			newLineRenderer.transform.position = new Vector3(0, 0, ProcessingLiteGP21.DrawZOffset);
 
 			//Apply settings
 			newLineRenderer.SetPosition(0, startPos);
@@ -254,29 +291,29 @@ namespace ProcessingLite
 
 	public class PShape : IObjectPooling
 	{
-		public int CurrentID { get; set; }
+		private readonly List<LineRenderer> _lines        = new List<LineRenderer>();
+		private readonly List<MeshFilter>   _mesh         = new List<MeshFilter>();
+		private readonly List<MeshRenderer> _meshRenderer = new List<MeshRenderer>();
+
+		private Transform _holder;
+		private Material  _material, _meshMaterial;
+
+		public List<Vector2> ShapeKeys;
+		public PShapeMode    ShapeMode;
+		public int           CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
-			for (int i = CurrentID; i < _lines.Count; i++) {
+			for (int i = CurrentID; i < _lines.Count; i++)
 				if (_lines[i].gameObject.activeSelf)
 					_lines[i].gameObject.SetActive(false);
 				else break;
-			}
 
 			CurrentID = 0;
 		}
 
-		private          Transform _holder;
-		private          Material _material, _meshMaterial;
-		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
-		private readonly List<MeshFilter> _mesh = new List<MeshFilter>();
-		private readonly List<MeshRenderer> _meshRenderer = new List<MeshRenderer>();
-		private          Material GetMaterial() => _material = new Material(Shader.Find("Sprites/Default"));
-		private          Material GetMeshMaterial() => _meshMaterial = new Material(Shader.Find("Unlit/Color"));
-
-		public List<Vector2> ShapeKeys;
-		public PShapeMode    ShapeMode;
+		private Material GetMaterial()     => _material = new Material(Shader.Find("Sprites/Default"));
+		private Material GetMeshMaterial() => _meshMaterial = new Material(Shader.Find("Unlit/Color"));
 
 		public void Shape(bool loop = false, bool fill = true)
 		{
@@ -296,7 +333,7 @@ namespace ProcessingLite
 			//Check for line from list, re-use or create new.
 			if (CurrentID + 1 > _lines.Count || _lines[CurrentID] is null) {
 				var newObject = new GameObject("Shape" + (_lines.Count + 1).ToString("000"));
-				newObject.transform.parent        = _holder ? _holder : _holder = GP21.Holder;
+				newObject.transform.parent        = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
 				newLineRenderer                   = newObject.AddComponent<LineRenderer>();
 				newLineRenderer.material          = _material ?? GetMaterial();
 				newLineRenderer.shadowCastingMode = ShadowCastingMode.Off;
@@ -317,10 +354,10 @@ namespace ProcessingLite
 				newLineRenderer.gameObject.SetActive(true);
 			}
 
-			GP21.DrawZOffset                   += GP21.ZOffset;
-			newLineRenderer.transform.position =  new Vector3(0, 0, GP21.DrawZOffset);
+			ProcessingLiteGP21.DrawZOffset     += ProcessingLiteGP21.ZOffset;
+			newLineRenderer.transform.position =  new Vector3(0, 0, ProcessingLiteGP21.DrawZOffset);
 
-			if (GP21.DrawFill && loop && fill) { ShapeFill(shapeKeys, newMeshFilter, newMeshRenderer); }
+			if (GP21.DrawFill && loop && fill) ShapeFill(shapeKeys, newMeshFilter, newMeshRenderer);
 
 			if (GP21.DrawStroke) {
 				newLineRenderer.positionCount = shapeKeys.Length;
@@ -335,8 +372,8 @@ namespace ProcessingLite
 		private void ShapeFill(Vector2[] shapeKeys, MeshFilter newMeshFilter, MeshRenderer newMeshRenderer)
 		{
 			//Apply shape
-			var verts = new Vector3[shapeKeys.Length];
-			for (int i = 0; i < verts.Length; i++) { verts[i] = shapeKeys[i]; }
+			var verts                                       = new Vector3[shapeKeys.Length];
+			for (int i = 0; i < verts.Length; i++) verts[i] = shapeKeys[i];
 
 			newMeshFilter.mesh.vertices = verts;
 			int triLenght = shapeKeys.Length + 1;
@@ -372,35 +409,35 @@ namespace ProcessingLite
 
 	public class PRect : IObjectPooling
 	{
-		public int CurrentID { get; set; }
+		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
+
+		private Transform _holder;
+		private Sprite    _squareTexture;
+		public  int       CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
-			for (int i = CurrentID; i < _sprite.Count; i++) {
+			for (int i = CurrentID; i < _sprite.Count; i++)
 				if (_sprite[i].gameObject.activeSelf)
 					_sprite[i].gameObject.SetActive(false);
 				else break;
-			}
 
 			CurrentID = 0;
 		}
-
-		private          Transform            _holder;
-		private          Sprite               _squareTexture;
-		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
 
 		private Sprite GetSquareTexture() => _squareTexture = AssetDatabase.LoadAssetAtPath<Sprite>(
 			"Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Textures/Square.png");
 
 		public void Rect(float x1, float y1, float x2, float y2)
 		{
-			GP21.DrawZOffset += GP21.ZOffset;
+			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
 
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
+			newSpriteRenderer.color = GP21.PFill;
 
 			//apply size and position
-			var transform = newSpriteRenderer.transform;
-			transform.position   = new Vector3((x1 + x2) / 2f,     (y1 + y2) / 2f,     GP21.DrawZOffset);
+			Transform transform = newSpriteRenderer.transform;
+			transform.position   = new Vector3((x1 + x2) / 2f,     (y1 + y2) / 2f,     ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(Mathf.Abs(x1 - x2), Mathf.Abs(y1 - y2), 1f);
 
 			//Increment to next line in list
@@ -409,14 +446,14 @@ namespace ProcessingLite
 
 		public void Square(float x, float y, float extent)
 		{
-			GP21.DrawZOffset += GP21.ZOffset;
+			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
 
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
 			newSpriteRenderer.color = GP21.PFill;
 
 			//apply size and position
-			var transform = newSpriteRenderer.transform;
-			transform.position   = new Vector3(x,      y,      GP21.DrawZOffset);
+			Transform transform = newSpriteRenderer.transform;
+			transform.position   = new Vector3(x,      y,      ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(extent, extent, 1f);
 
 			//Increment to next line in list
@@ -431,7 +468,76 @@ namespace ProcessingLite
 			}
 
 			var newObject = new GameObject("Rect" + (_sprite.Count + 1).ToString("000"));
-			newObject.transform.parent = _holder ? _holder : _holder = GP21.Holder;
+			newObject.transform.parent = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
+			var newSpriteRenderer = newObject.AddComponent<SpriteRenderer>();
+			newSpriteRenderer.sprite = _squareTexture ?? GetSquareTexture();
+			_sprite.Add(newSpriteRenderer);
+			return newSpriteRenderer;
+		}
+	}
+
+	public class PEllipse : IObjectPooling
+	{
+		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
+
+		private Transform _holder;
+		private Sprite    _squareTexture;
+		public  int       CurrentID { get; set; }
+
+		public void LateUpdate()
+		{
+			for (int i = CurrentID; i < _sprite.Count; i++)
+				if (_sprite[i].gameObject.activeSelf)
+					_sprite[i].gameObject.SetActive(false);
+				else break;
+
+			CurrentID = 0;
+		}
+
+		private Sprite GetSquareTexture() => _squareTexture = AssetDatabase.LoadAssetAtPath<Sprite>(
+			"Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Textures/Circle.png");
+
+		public void Ellipse(float x, float y, float height, float width, bool swapColor = false)
+		{
+			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
+
+			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
+			newSpriteRenderer.color = swapColor ? GP21.PStroke : GP21.PFill;
+
+			//apply size and position
+			Transform transform = newSpriteRenderer.transform;
+			transform.position   = new Vector3(x,      y,     ProcessingLiteGP21.DrawZOffset);
+			transform.localScale = new Vector3(height, width, 1f);
+
+			//Increment to next line in list
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+		}
+
+		public void Circle(float x, float y, float diameter, bool swapColor = false)
+		{
+			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
+
+			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
+			newSpriteRenderer.color = swapColor ? GP21.PStroke : GP21.PFill;
+
+			//apply size and position
+			Transform transform = newSpriteRenderer.transform;
+			transform.position   = new Vector3(x,        y,        ProcessingLiteGP21.DrawZOffset);
+			transform.localScale = new Vector3(diameter, diameter, 1f);
+
+			//Increment to next line in list
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+		}
+
+		private SpriteRenderer GetSpriteRenderer()
+		{
+			if (CurrentID < _sprite.Count && _sprite[CurrentID] is { }) {
+				_sprite[CurrentID].gameObject.SetActive(true);
+				return _sprite[CurrentID];
+			}
+
+			var newObject = new GameObject("Rect" + (_sprite.Count + 1).ToString("000"));
+			newObject.transform.parent = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
 			var newSpriteRenderer = newObject.AddComponent<SpriteRenderer>();
 			newSpriteRenderer.sprite = _squareTexture ?? GetSquareTexture();
 			_sprite.Add(newSpriteRenderer);

@@ -26,8 +26,6 @@ This is made for Unity3D version 2020.x but is largely untested.
 - BeginShape()
 - Vertex()
 - EndShape()
-
-## Future Commands
 - Circle()
 - Ellipse()
 
