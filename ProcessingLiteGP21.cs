@@ -17,14 +17,14 @@ namespace ProcessingLite
 		public static Color PStroke            = Color.white; //Processing
 		public static Color PFill              = Color.black; //Processing
 
-		public static bool DrawStroke = true;
-		public static bool DrawFill   = true;
+		public static bool     DrawStroke = true;
+		public static bool     DrawFill   = true;
+		private       PEllipse _pEllipse;
 
 		//Private variables
 		private PLine  _pLine;
 		private PRect  _pRect;
 		private PShape _pShape;
-
 
 		public GP21() => ProcessingLiteGP21.Resets += ResetRenderers;
 		private void OnDestroy() => ProcessingLiteGP21.Resets -= ResetRenderers;
@@ -34,6 +34,7 @@ namespace ProcessingLite
 			_pLine?.LateUpdate();
 			_pRect?.LateUpdate();
 			_pShape?.LateUpdate();
+			_pEllipse?.LateUpdate();
 		}
 
 
@@ -60,23 +61,41 @@ namespace ProcessingLite
 		{
 			_pRect ??= new PRect();
 			_pRect.Rect(x1, y1, x2, y2);
-			if (DrawStroke) {
-				_pShape.ShapeKeys = new List<Vector2>(
-					new[] {
-						new Vector2(x1, y1),
-						new Vector2(x1, y2),
-						new Vector2(x2, y2),
-						new Vector2(x2, y1)
-					});
-				_pShape.ShapeMode = PShapeMode.Default;
-				_pShape.Shape(true, false);
-			}
+			if (!DrawStroke) return;
+			_pShape.ShapeKeys = new List<Vector2>(
+				new[] {
+					new Vector2(x1, y1),
+					new Vector2(x1, y2),
+					new Vector2(x2, y2),
+					new Vector2(x2, y1)
+				});
+			_pShape.ShapeMode = PShapeMode.Default;
+			_pShape.Shape(true, false);
 		}
 
 		public void Square(float x, float y, float extent)
 		{
 			_pRect ??= new PRect();
 			_pRect.Square(x, y, extent);
+		}
+
+		public void Ellipse(float x, float y, float height, float width)
+		{
+			_pEllipse ??= new PEllipse();
+			if (DrawStroke) {
+				_pEllipse.Ellipse(x, y, height + PStrokeWeight / 8f, width + PStrokeWeight / 8f, true);
+				_pEllipse.Ellipse(x, y, height - PStrokeWeight / 8f, width - PStrokeWeight / 8f);
+			} else _pEllipse.Ellipse(x, y, height, width);
+		}
+
+		public void Circle(float x, float y, float diameter)
+		{
+			_pEllipse ??= new PEllipse();
+			_pEllipse.Circle(x, y, diameter);
+			if (DrawStroke) {
+				_pEllipse.Circle(x, y, diameter + PStrokeWeight / 8f, true);
+				_pEllipse.Circle(x, y, diameter - PStrokeWeight / 8f);
+			} else _pEllipse.Circle(x, y, diameter);
 		}
 
 		public void BeginShape(PShapeMode mode = PShapeMode.Default)
@@ -414,6 +433,7 @@ namespace ProcessingLite
 			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
 
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
+			newSpriteRenderer.color = GP21.PFill;
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
@@ -435,6 +455,75 @@ namespace ProcessingLite
 			Transform transform = newSpriteRenderer.transform;
 			transform.position   = new Vector3(x,      y,      ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(extent, extent, 1f);
+
+			//Increment to next line in list
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+		}
+
+		private SpriteRenderer GetSpriteRenderer()
+		{
+			if (CurrentID < _sprite.Count && _sprite[CurrentID] is { }) {
+				_sprite[CurrentID].gameObject.SetActive(true);
+				return _sprite[CurrentID];
+			}
+
+			var newObject = new GameObject("Rect" + (_sprite.Count + 1).ToString("000"));
+			newObject.transform.parent = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
+			var newSpriteRenderer = newObject.AddComponent<SpriteRenderer>();
+			newSpriteRenderer.sprite = _squareTexture ?? GetSquareTexture();
+			_sprite.Add(newSpriteRenderer);
+			return newSpriteRenderer;
+		}
+	}
+
+	public class PEllipse : IObjectPooling
+	{
+		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
+
+		private Transform _holder;
+		private Sprite    _squareTexture;
+		public  int       CurrentID { get; set; }
+
+		public void LateUpdate()
+		{
+			for (int i = CurrentID; i < _sprite.Count; i++)
+				if (_sprite[i].gameObject.activeSelf)
+					_sprite[i].gameObject.SetActive(false);
+				else break;
+
+			CurrentID = 0;
+		}
+
+		private Sprite GetSquareTexture() => _squareTexture = AssetDatabase.LoadAssetAtPath<Sprite>(
+			"Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Textures/Circle.png");
+
+		public void Ellipse(float x, float y, float height, float width, bool swapColor = false)
+		{
+			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
+
+			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
+			newSpriteRenderer.color = swapColor ? GP21.PStroke : GP21.PFill;
+
+			//apply size and position
+			Transform transform = newSpriteRenderer.transform;
+			transform.position   = new Vector3(x,      y,     ProcessingLiteGP21.DrawZOffset);
+			transform.localScale = new Vector3(height, width, 1f);
+
+			//Increment to next line in list
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+		}
+
+		public void Circle(float x, float y, float diameter, bool swapColor = false)
+		{
+			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
+
+			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
+			newSpriteRenderer.color = swapColor ? GP21.PStroke : GP21.PFill;
+
+			//apply size and position
+			Transform transform = newSpriteRenderer.transform;
+			transform.position   = new Vector3(x,        y,        ProcessingLiteGP21.DrawZOffset);
+			transform.localScale = new Vector3(diameter, diameter, 1f);
 
 			//Increment to next line in list
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
