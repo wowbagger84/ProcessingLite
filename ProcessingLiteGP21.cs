@@ -12,19 +12,21 @@ namespace ProcessingLite
 	/// </summary>
 	public class GP21 : MonoBehaviour
 	{
-		public const  int   MAXNumberOfObjects = 500;
-		public static float PStrokeWeight      = 1;           //Processing
-		public static Color PStroke            = Color.white; //Processing
-		public static Color PFill              = Color.black; //Processing
+		public const int MAXNumberOfObjects = 500;
+		public static float PStrokeWeight = 1;           //Processing
+		public static Color PStroke = Color.white; //Processing
+		public static Color PFill = Color.black; //Processing
 
-		public static bool     DrawStroke = true;
-		public static bool     DrawFill   = true;
-		private       PEllipse _pEllipse;
+		public static bool DrawStroke = true;
+		public static bool DrawFill = true;
 
 		//Private variables
-		private PLine  _pLine;
-		private PRect  _pRect;
+		private PLine _pLine;
+		private PRect _pRect;
 		private PShape _pShape;
+		private PEllipse _pEllipse;
+
+		private Camera CameraRef;
 
 		public GP21() => ProcessingLiteGP21.Resets += ResetRenderers;
 		private void OnDestroy() => ProcessingLiteGP21.Resets -= ResetRenderers;
@@ -37,20 +39,44 @@ namespace ProcessingLite
 			_pEllipse?.LateUpdate();
 		}
 
+		public float Width
+		{
+			get
+			{
+				CameraRef ??= Camera.main;
+				return CameraRef.orthographicSize * Camera.main.aspect;
+			}
+		}
 
-#region draw functions
+		public float Height
+		{
+			get
+			{
+				CameraRef ??= Camera.main;
+				return CameraRef.orthographicSize;
+			}
+		}
 
-		public void Background(int rgb)             => Background(rgb, rgb, rgb);
-		public void Background(int r, int g, int b) => Background(new Color32((byte) r, (byte) g, (byte) b, 255));
+		#region draw functions
+
+		public void Background(int rgb) => Background(rgb, rgb, rgb);
+		public void Background(int r, int g, int b) => Background(new Color32((byte)r, (byte)g, (byte)b, 255));
 
 		public void Background(Color color)
 		{
-			Camera.main.backgroundColor   = color;
-			Camera.main.clearFlags        = CameraClearFlags.Color;
+			Camera.main.backgroundColor = color;
+			Camera.main.clearFlags = CameraClearFlags.Color;
 			ProcessingLiteGP21.Background = Math.Max(1, ProcessingLiteGP21.Background);
 			ProcessingLiteGP21.EarlyReset();
 		}
 
+		/// <summary>
+		/// Draws a Line on screen.
+		/// </summary>
+		/// <param name="x1">Start point x position</param>
+		/// <param name="y1">Start point y position</param>
+		/// <param name="x2">End point x position</param>
+		/// <param name="y2">End point y position</param>
 		public void Line(float x1, float y1, float x2, float y2)
 		{
 			_pLine ??= new PLine();
@@ -82,68 +108,74 @@ namespace ProcessingLite
 		public void Ellipse(float x, float y, float height, float width)
 		{
 			_pEllipse ??= new PEllipse();
-			if (DrawStroke) {
+			if (DrawStroke)
+			{
 				_pEllipse.Ellipse(x, y, height + PStrokeWeight / 8f, width + PStrokeWeight / 8f, true);
 				_pEllipse.Ellipse(x, y, height - PStrokeWeight / 8f, width - PStrokeWeight / 8f);
-			} else _pEllipse.Ellipse(x, y, height, width);
+			}
+			else _pEllipse.Ellipse(x, y, height, width);
 		}
 
 		public void Circle(float x, float y, float diameter)
 		{
 			_pEllipse ??= new PEllipse();
 			_pEllipse.Circle(x, y, diameter);
-			if (DrawStroke) {
+			if (DrawStroke)
+			{
 				_pEllipse.Circle(x, y, diameter + PStrokeWeight / 8f, true);
 				_pEllipse.Circle(x, y, diameter - PStrokeWeight / 8f);
-			} else _pEllipse.Circle(x, y, diameter);
+			}
+			else _pEllipse.Circle(x, y, diameter);
 		}
 
 		public void BeginShape(PShapeMode mode = PShapeMode.Default)
 		{
-			_pShape           ??= new PShape();
-			_pShape.ShapeKeys =   new List<Vector2>();
-			_pShape.ShapeMode =   mode;
+			_pShape ??= new PShape();
+			_pShape.ShapeKeys = new List<Vector2>();
+			_pShape.ShapeMode = mode;
 		}
 
 		public void Vertex(float x, float y)
 		{
-			#if UNITY_EDITOR
+#if UNITY_EDITOR
 			if (_pShape.ShapeKeys is null)
 				throw new Exception("Can't creates Vertex before a new shape has been started.");
-			#endif
+#endif
 			_pShape.ShapeKeys.Add(new Vector2(x, y));
 		}
 
 		public void EndShape(bool close = false)
 		{
-			#if UNITY_EDITOR
+#if UNITY_EDITOR
 			if (_pShape?.ShapeKeys is null) throw new Exception("Can't end shape before a new shape has been started.");
 			if (_pShape.ShapeKeys.Count == 0)
 				throw new Exception("Can't end shape before any vertexes have been defined.");
-			#endif
-			if (_pShape.ShapeMode == PShapeMode.Lines) {
+#endif
+			if (_pShape.ShapeMode == PShapeMode.Lines)
+			{
 				_pLine ??= new PLine();
 				for (int i = 0; i + 1 < _pShape.ShapeKeys.Count; i += 2)
 					_pLine.Line(
 						_pShape.ShapeKeys[i].x, _pShape.ShapeKeys[i].y, _pShape.ShapeKeys[i + 1].x,
-						_pShape.ShapeKeys[i                                                 + 1].y);
+						_pShape.ShapeKeys[i + 1].y);
 				_pShape.ShapeKeys = null;
-			} else _pShape.Shape(close);
+			}
+			else _pShape.Shape(close);
 		}
 
-#endregion
+		#endregion
 
-#region Change properties
+		#region Change properties
 
 		public void StrokeWeight(float weight)
 		{
 			PStrokeWeight = Mathf.Max(weight, 0f);
-			DrawStroke    = PStrokeWeight != 0 && PStroke.a != 0;
+			DrawStroke = PStrokeWeight != 0 && PStroke.a != 0;
 		}
 
 		public void NoStroke()
 		{
-			PStroke.a  = 0;
+			PStroke.a = 0;
 			DrawStroke = false;
 		}
 
@@ -151,13 +183,13 @@ namespace ProcessingLite
 
 		public void Stroke(int r, int g, int b, int a = 255)
 		{
-			PStroke    = new Color32((byte) r, (byte) g, (byte) b, (byte) a);
+			PStroke = new Color32((byte)r, (byte)g, (byte)b, (byte)a);
 			DrawStroke = PStrokeWeight != 0 && a != 0;
 		}
 
 		public void NoFill()
 		{
-			PFill.a  = 0;
+			PFill.a = 0;
 			DrawFill = false;
 		}
 
@@ -165,19 +197,19 @@ namespace ProcessingLite
 
 		public void Fill(int r, int g, int b, int a = 255)
 		{
-			PFill    = new Color32((byte) r, (byte) g, (byte) b, (byte) a);
+			PFill = new Color32((byte)r, (byte)g, (byte)b, (byte)a);
 			DrawFill = a != 0;
 		}
 
-#endregion
+		#endregion
 	}
 
 	public class ProcessingLiteGP21 : MonoBehaviour
 	{
 		public delegate void LateReset();
 
-		public const  float ZOffset    = -0.001f; //offset between objects in depth.
-		public static int   Background = 2;
+		public const float ZOffset = -0.001f; //offset between objects in depth.
+		public static int Background = 2;
 		public static float DrawZOffset; //current offset
 
 		private static Transform _holder;
@@ -185,13 +217,15 @@ namespace ProcessingLite
 
 		private ProcessingLiteGP21()
 		{
-			#if !UNITY_2020_1_OR_NEWER
+#if !UNITY_2020_1_OR_NEWER
 			Debug.LogError("Unity version not supported");
-			#endif
+#endif
 		}
 
-		public static Transform Holder {
-			get {
+		public static Transform Holder
+		{
+			get
+			{
 				if (_holder is { }) return _holder;
 				var tmp = new GameObject("Holder");
 				tmp.AddComponent<ProcessingLiteGP21>();
@@ -201,7 +235,8 @@ namespace ProcessingLite
 
 		private void LateUpdate()
 		{
-			if (Background > -1) {
+			if (Background > -1)
+			{
 				if (Background == 0) Camera.main.clearFlags = CameraClearFlags.Nothing;
 				Background--;
 				if (Background == 1) return;
@@ -224,7 +259,7 @@ namespace ProcessingLite
 
 	public interface IObjectPooling
 	{
-		int  CurrentID { get; set; }
+		int CurrentID { get; set; }
 		void LateUpdate();
 	}
 
@@ -233,8 +268,8 @@ namespace ProcessingLite
 		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
 
 		private Transform _holder;
-		private Material  _material;
-		public  int       CurrentID { get; set; }
+		private Material _material;
+		public int CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
@@ -257,16 +292,19 @@ namespace ProcessingLite
 			LineRenderer newLineRenderer;
 
 			//Check for line from list, re-use or create new.
-			if (CurrentID + 1 > _lines.Count || _lines[CurrentID] is null) {
+			if (CurrentID + 1 > _lines.Count || _lines[CurrentID] is null)
+			{
 				var newObject = new GameObject("Line" + (_lines.Count + 1).ToString("000"));
-				newObject.transform.parent        = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
-				newLineRenderer                   = newObject.AddComponent<LineRenderer>();
-				newLineRenderer.material          = _material ?? GetMaterial();
+				newObject.transform.parent = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
+				newLineRenderer = newObject.AddComponent<LineRenderer>();
+				newLineRenderer.material = _material ?? GetMaterial();
 				newLineRenderer.shadowCastingMode = ShadowCastingMode.Off;
-				newLineRenderer.receiveShadows    = false;
-				newLineRenderer.useWorldSpace     = false;
+				newLineRenderer.receiveShadows = false;
+				newLineRenderer.useWorldSpace = false;
 				_lines.Add(newLineRenderer);
-			} else {
+			}
+			else
+			{
 				newLineRenderer = _lines[CurrentID];
 				newLineRenderer.gameObject.SetActive(true);
 			}
@@ -278,7 +316,7 @@ namespace ProcessingLite
 			newLineRenderer.SetPosition(1, endPos);
 
 			newLineRenderer.startWidth = GP21.PStrokeWeight * 0.1f;
-			newLineRenderer.endWidth   = GP21.PStrokeWeight * 0.1f;
+			newLineRenderer.endWidth = GP21.PStrokeWeight * 0.1f;
 
 			newLineRenderer.startColor = newLineRenderer.endColor = GP21.PStroke;
 
@@ -291,16 +329,16 @@ namespace ProcessingLite
 
 	public class PShape : IObjectPooling
 	{
-		private readonly List<LineRenderer> _lines        = new List<LineRenderer>();
-		private readonly List<MeshFilter>   _mesh         = new List<MeshFilter>();
+		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
+		private readonly List<MeshFilter> _mesh = new List<MeshFilter>();
 		private readonly List<MeshRenderer> _meshRenderer = new List<MeshRenderer>();
 
 		private Transform _holder;
-		private Material  _material, _meshMaterial;
+		private Material _material, _meshMaterial;
 
 		public List<Vector2> ShapeKeys;
-		public PShapeMode    ShapeMode;
-		public int           CurrentID { get; set; }
+		public PShapeMode ShapeMode;
+		public int CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
@@ -312,12 +350,13 @@ namespace ProcessingLite
 			CurrentID = 0;
 		}
 
-		private Material GetMaterial()     => _material = new Material(Shader.Find("Sprites/Default"));
+		private Material GetMaterial() => _material = new Material(Shader.Find("Sprites/Default"));
 		private Material GetMeshMaterial() => _meshMaterial = new Material(Shader.Find("Unlit/Color"));
 
 		public void Shape(bool loop = false, bool fill = true)
 		{
-			switch (ShapeMode) {
+			switch (ShapeMode)
+			{
 				case PShapeMode.Default:
 					DrawShape(ShapeKeys.ToArray(), loop, fill);
 					break;
@@ -327,43 +366,48 @@ namespace ProcessingLite
 		private void DrawShape(Vector2[] shapeKeys, bool loop = false, bool fill = true)
 		{
 			LineRenderer newLineRenderer;
-			MeshFilter   newMeshFilter;
+			MeshFilter newMeshFilter;
 			MeshRenderer newMeshRenderer;
 
 			//Check for line from list, re-use or create new.
-			if (CurrentID + 1 > _lines.Count || _lines[CurrentID] is null) {
+			if (CurrentID + 1 > _lines.Count || _lines[CurrentID] is null)
+			{
 				var newObject = new GameObject("Shape" + (_lines.Count + 1).ToString("000"));
-				newObject.transform.parent        = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
-				newLineRenderer                   = newObject.AddComponent<LineRenderer>();
-				newLineRenderer.material          = _material ?? GetMaterial();
+				newObject.transform.parent = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
+				newLineRenderer = newObject.AddComponent<LineRenderer>();
+				newLineRenderer.material = _material ?? GetMaterial();
 				newLineRenderer.shadowCastingMode = ShadowCastingMode.Off;
-				newLineRenderer.receiveShadows    = false;
-				newLineRenderer.useWorldSpace     = false;
+				newLineRenderer.receiveShadows = false;
+				newLineRenderer.useWorldSpace = false;
 				_lines.Add(newLineRenderer);
-				newMeshFilter                     = newObject.AddComponent<MeshFilter>();
-				newMeshRenderer                   = newObject.AddComponent<MeshRenderer>();
+				newMeshFilter = newObject.AddComponent<MeshFilter>();
+				newMeshRenderer = newObject.AddComponent<MeshRenderer>();
 				newMeshRenderer.shadowCastingMode = ShadowCastingMode.Off;
-				newMeshRenderer.receiveShadows    = false;
-				newMeshRenderer.material          = _meshMaterial ?? GetMeshMaterial();
+				newMeshRenderer.receiveShadows = false;
+				newMeshRenderer.material = _meshMaterial ?? GetMeshMaterial();
 				_meshRenderer.Add(newMeshRenderer);
 				_mesh.Add(newMeshFilter);
-			} else {
+			}
+			else
+			{
 				newLineRenderer = _lines[CurrentID];
-				newMeshFilter   = _mesh[CurrentID];
+				newMeshFilter = _mesh[CurrentID];
 				newMeshRenderer = _meshRenderer[CurrentID];
 				newLineRenderer.gameObject.SetActive(true);
 			}
 
-			ProcessingLiteGP21.DrawZOffset     += ProcessingLiteGP21.ZOffset;
-			newLineRenderer.transform.position =  new Vector3(0, 0, ProcessingLiteGP21.DrawZOffset);
+			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
+			newLineRenderer.transform.position = new Vector3(0, 0, ProcessingLiteGP21.DrawZOffset);
 
 			if (GP21.DrawFill && loop && fill) ShapeFill(shapeKeys, newMeshFilter, newMeshRenderer);
 
-			if (GP21.DrawStroke) {
+			if (GP21.DrawStroke)
+			{
 				newLineRenderer.positionCount = shapeKeys.Length;
-				newLineRenderer.loop          = loop;
+				newLineRenderer.loop = loop;
 				ShapeStroke(shapeKeys, newLineRenderer);
-			} else newLineRenderer.positionCount = 0;
+			}
+			else newLineRenderer.positionCount = 0;
 
 			//Increment to next line in list
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
@@ -372,13 +416,14 @@ namespace ProcessingLite
 		private void ShapeFill(Vector2[] shapeKeys, MeshFilter newMeshFilter, MeshRenderer newMeshRenderer)
 		{
 			//Apply shape
-			var verts                                       = new Vector3[shapeKeys.Length];
+			var verts = new Vector3[shapeKeys.Length];
 			for (int i = 0; i < verts.Length; i++) verts[i] = shapeKeys[i];
 
 			newMeshFilter.mesh.vertices = verts;
 			int triLenght = shapeKeys.Length + 1;
-			var tri       = new List<int>();
-			for (int i = 0; i + 2 < triLenght; i += 2) {
+			var tri = new List<int>();
+			for (int i = 0; i + 2 < triLenght; i += 2)
+			{
 				tri.Add(i);
 				tri.Add(i + 1);
 				tri.Add(i + 2);
@@ -400,7 +445,7 @@ namespace ProcessingLite
 
 			//Apply settings
 			newLineRenderer.startWidth = GP21.PStrokeWeight * 0.1f;
-			newLineRenderer.endWidth   = GP21.PStrokeWeight * 0.1f;
+			newLineRenderer.endWidth = GP21.PStrokeWeight * 0.1f;
 
 			newLineRenderer.startColor = newLineRenderer.endColor = GP21.PStroke;
 		}
@@ -412,8 +457,8 @@ namespace ProcessingLite
 		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
 
 		private Transform _holder;
-		private Sprite    _squareTexture;
-		public  int       CurrentID { get; set; }
+		private Sprite _squareTexture;
+		public int CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
@@ -437,7 +482,7 @@ namespace ProcessingLite
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
-			transform.position   = new Vector3((x1 + x2) / 2f,     (y1 + y2) / 2f,     ProcessingLiteGP21.DrawZOffset);
+			transform.position = new Vector3((x1 + x2) / 2f, (y1 + y2) / 2f, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(Mathf.Abs(x1 - x2), Mathf.Abs(y1 - y2), 1f);
 
 			//Increment to next line in list
@@ -453,7 +498,7 @@ namespace ProcessingLite
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
-			transform.position   = new Vector3(x,      y,      ProcessingLiteGP21.DrawZOffset);
+			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(extent, extent, 1f);
 
 			//Increment to next line in list
@@ -462,7 +507,8 @@ namespace ProcessingLite
 
 		private SpriteRenderer GetSpriteRenderer()
 		{
-			if (CurrentID < _sprite.Count && _sprite[CurrentID] is { }) {
+			if (CurrentID < _sprite.Count && _sprite[CurrentID] is { })
+			{
 				_sprite[CurrentID].gameObject.SetActive(true);
 				return _sprite[CurrentID];
 			}
@@ -481,8 +527,8 @@ namespace ProcessingLite
 		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
 
 		private Transform _holder;
-		private Sprite    _squareTexture;
-		public  int       CurrentID { get; set; }
+		private Sprite _squareTexture;
+		public int CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
@@ -506,7 +552,7 @@ namespace ProcessingLite
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
-			transform.position   = new Vector3(x,      y,     ProcessingLiteGP21.DrawZOffset);
+			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(height, width, 1f);
 
 			//Increment to next line in list
@@ -522,7 +568,7 @@ namespace ProcessingLite
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
-			transform.position   = new Vector3(x,        y,        ProcessingLiteGP21.DrawZOffset);
+			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(diameter, diameter, 1f);
 
 			//Increment to next line in list
@@ -531,7 +577,8 @@ namespace ProcessingLite
 
 		private SpriteRenderer GetSpriteRenderer()
 		{
-			if (CurrentID < _sprite.Count && _sprite[CurrentID] is { }) {
+			if (CurrentID < _sprite.Count && _sprite[CurrentID] is { })
+			{
 				_sprite[CurrentID].gameObject.SetActive(true);
 				return _sprite[CurrentID];
 			}

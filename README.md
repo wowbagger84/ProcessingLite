@@ -18,6 +18,10 @@ All these commands might not have full support (Example: rounded corners on rect
 
 [Processing documentation](https://processing.org/reference/)
 
+#### Environment
+- Height
+- Width
+
 #### Shape
 - Attributes
   - StrokeWeight()
