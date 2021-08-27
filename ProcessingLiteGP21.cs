@@ -44,7 +44,7 @@ namespace ProcessingLite
 			get
 			{
 				CameraRef ??= Camera.main;
-				return CameraRef.orthographicSize * Camera.main.aspect * 2;
+				return CameraRef.orthographicSize * CameraRef.aspect * 2;
 			}
 		}
 
@@ -218,6 +218,7 @@ namespace ProcessingLite
 		#endregion
 	}
 
+	//Class added to holde object in scene.
 	public class ProcessingLiteGP21 : MonoBehaviour
 	{
 		public delegate void LateReset();
@@ -234,6 +235,14 @@ namespace ProcessingLite
 #if !UNITY_2020_1_OR_NEWER
 			Debug.LogError("Unity version not supported");
 #endif
+		}
+
+		private void Start()
+		{
+			var cameraRef = Camera.main;
+			float Width = cameraRef.orthographicSize * cameraRef.aspect;
+			float Height = cameraRef.orthographicSize;
+			cameraRef.transform.Translate(Width, Height, 0);
 		}
 
 		public static Transform Holder
