@@ -44,7 +44,7 @@ namespace ProcessingLite
 			get
 			{
 				CameraRef ??= Camera.main;
-				return CameraRef.orthographicSize * Camera.main.aspect;
+				return CameraRef.orthographicSize * Camera.main.aspect * 2;
 			}
 		}
 
@@ -53,7 +53,7 @@ namespace ProcessingLite
 			get
 			{
 				CameraRef ??= Camera.main;
-				return CameraRef.orthographicSize;
+				return CameraRef.orthographicSize * 2;
 			}
 		}
 
@@ -88,6 +88,7 @@ namespace ProcessingLite
 			_pRect ??= new PRect();
 			_pRect.Rect(x1, y1, x2, y2);
 			if (!DrawStroke) return;
+			_pShape ??= new PShape();
 			_pShape.ShapeKeys = new List<Vector2>(
 				new[] {
 					new Vector2(x1, y1),
@@ -103,6 +104,19 @@ namespace ProcessingLite
 		{
 			_pRect ??= new PRect();
 			_pRect.Square(x, y, extent);
+
+			if (!DrawStroke) return;
+			_pShape ??= new PShape();
+			float x1 = x + extent / 2, y1 = y - extent / 2, x2 = x - extent / 2, y2 = y + extent / 2;
+			_pShape.ShapeKeys = new List<Vector2>(
+				new[] {
+					new Vector2(x1, y1),
+					new Vector2(x1, y2),
+					new Vector2(x2, y2),
+					new Vector2(x2, y1)
+				});
+			_pShape.ShapeMode = PShapeMode.Default;
+			_pShape.Shape(true, false);
 		}
 
 		public void Ellipse(float x, float y, float height, float width)
