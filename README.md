@@ -68,11 +68,11 @@ public class Test : ProcessingLite.GP21
 {
 	void Start()
 	{
-    Line(-3, 2, -3, -2);
-    Line(-3, 0, 0, 0);
-    Line(0, 2, 0, -2);
-    Line(2, 1, 2, -2);
-    Line(2, 2, 2, 1.8f);
+    Line(4, 7, 4, 3);
+    Line(4, 5, 6, 5);
+    Line(6, 7, 6, 3);
+    Line(8, 5.5f, 8, 3);
+    Line(8, 7, 8, 6.8f);
   }
 }
 ```
