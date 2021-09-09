@@ -26,7 +26,7 @@ namespace ProcessingLite
 		private PShape _pShape;
 		private PEllipse _pEllipse;
 
-		private Camera CameraRef;
+		private Camera _cameraRef;
 
 		public GP21() => ProcessingLiteGP21.Resets += ResetRenderers;
 		private void OnDestroy() => ProcessingLiteGP21.Resets -= ResetRenderers;
@@ -43,8 +43,8 @@ namespace ProcessingLite
 		{
 			get
 			{
-				CameraRef ??= Camera.main;
-				return CameraRef.orthographicSize * CameraRef.aspect * 2;
+				_cameraRef ??= Camera.main;
+				return _cameraRef.orthographicSize * _cameraRef.aspect * 2;
 			}
 		}
 
@@ -52,8 +52,8 @@ namespace ProcessingLite
 		{
 			get
 			{
-				CameraRef ??= Camera.main;
-				return CameraRef.orthographicSize * 2;
+				_cameraRef ??= Camera.main;
+				return _cameraRef.orthographicSize * 2;
 			}
 		}
 
@@ -71,18 +71,25 @@ namespace ProcessingLite
 		}
 
 		/// <summary>
-		/// Draws a Line on screen.
+		/// Draws a line (a direct path between two points) to the screen.
 		/// </summary>
-		/// <param name="x1">Start point x position</param>
-		/// <param name="y1">Start point y position</param>
-		/// <param name="x2">End point x position</param>
-		/// <param name="y2">End point y position</param>
+		/// <param name="x1">x-coordinate of the first point</param>
+		/// <param name="y1">y-coordinate of the first point</param>
+		/// <param name="x2">x-coordinate of the second point</param>
+		/// <param name="y2">y-coordinate of the second point</param>
 		public void Line(float x1, float y1, float x2, float y2)
 		{
 			_pLine ??= new PLine();
 			_pLine.Line(x1, y1, x2, y2);
 		}
 
+		/// <summary>
+		/// Draws a rectangle to the screen.
+		/// </summary>
+		/// <param name="x1">x-coordinate of the rectangle</param>
+		/// <param name="y1">y-coordinate of the rectangle</param>
+		/// <param name="x2">width of the rectangle</param>
+		/// <param name="y2">height of the rectangle</param>
 		public void Rect(float x1, float y1, float x2, float y2)
 		{
 			_pRect ??= new PRect();
@@ -99,7 +106,13 @@ namespace ProcessingLite
 			_pShape.ShapeMode = PShapeMode.Default;
 			_pShape.Shape(true, false);
 		}
-
+		
+		/// <summary>
+		/// Draws a square to the screen.
+		/// </summary>
+		/// <param name="x">x-coordinate of the rectangle</param>
+		/// <param name="y">y-coordinate of the rectangle</param>
+		/// <param name="extent">width and height of the rectangle</param>
 		public void Square(float x, float y, float extent)
 		{
 			_pRect ??= new PRect();
@@ -119,6 +132,13 @@ namespace ProcessingLite
 			_pShape.Shape(true, false);
 		}
 
+		/// <summary>
+		/// Draws an ellipse (oval) to the screen.
+		/// </summary>
+		/// <param name="x">x-coordinate of the ellipse</param>
+		/// <param name="y">y-coordinate of the ellipse</param>
+		/// <param name="height">width of the ellipse</param>
+		/// <param name="width">height of the ellipse</param>
 		public void Ellipse(float x, float y, float height, float width)
 		{
 			_pEllipse ??= new PEllipse();
@@ -130,6 +150,12 @@ namespace ProcessingLite
 			else _pEllipse.Ellipse(x, y, height, width);
 		}
 
+		/// <summary>
+		/// Draws a circle to the screen.
+		/// </summary>
+		/// <param name="x">x-coordinate of the circle</param>
+		/// <param name="y">y-coordinate of the circle</param>
+		/// <param name="diameter">width and height of the circle</param>
 		public void Circle(float x, float y, float diameter)
 		{
 			_pEllipse ??= new PEllipse();
@@ -142,6 +168,10 @@ namespace ProcessingLite
 			else _pEllipse.Circle(x, y, diameter);
 		}
 
+		/// <summary>
+		/// Using the BeginShape() and EndShape() functions allow creating more complex forms.
+		/// </summary>
+		/// <param name="mode">Either PShapeMode. Default or PShapeMode.Lines</param>
 		public void BeginShape(PShapeMode mode = PShapeMode.Default)
 		{
 			_pShape ??= new PShape();
@@ -149,6 +179,13 @@ namespace ProcessingLite
 			_pShape.ShapeMode = mode;
 		}
 
+		/// <summary>
+		/// All shapes are constructed by connecting a series of vertices.
+		/// It is used exclusively within the BeginShape() and EndShape() functions.
+		/// </summary>
+		/// <param name="x">x-coordinate of the vertex</param>
+		/// <param name="y">y-coordinate of the vertex</param>
+		/// <exception cref="Exception">Vertex() is used exclusively within the beginShape() and endShape() functions.</exception>
 		public void Vertex(float x, float y)
 		{
 #if UNITY_EDITOR
@@ -158,6 +195,11 @@ namespace ProcessingLite
 			_pShape.ShapeKeys.Add(new Vector2(x, y));
 		}
 
+		/// <summary>
+		/// The endShape() function is the companion to beginShape() and may only be called after beginShape().
+		/// </summary>
+		/// <param name="close">when true, the shape will have the first and last point connected</param>
+		/// <exception cref="Exception"></exception>
 		public void EndShape(bool close = false)
 		{
 #if UNITY_EDITOR
@@ -181,34 +223,68 @@ namespace ProcessingLite
 
 		#region Change properties
 
+		/// <summary>
+		/// Sets the width of the stroke used for lines, points, and the border around shapes.
+		/// </summary>
+		/// <param name="weight">the weight of the stroke</param>
 		public void StrokeWeight(float weight)
 		{
 			PStrokeWeight = Mathf.Max(weight, 0f);
 			DrawStroke = PStrokeWeight != 0 && PStroke.a != 0;
 		}
 
+		/// <summary>
+		/// Disables drawing the stroke (outline).
+		/// </summary>
 		public void NoStroke()
 		{
 			PStroke.a = 0;
 			DrawStroke = false;
 		}
 
+		/// <summary>
+		/// Sets the color used to draw lines and borders around shapes.
+		/// </summary>
+		/// <param name="rgb">specifies a value between white and black</param>
+		/// <param name="a">opacity of the stroke</param>
 		public void Stroke(int rgb, int a = 255) => Stroke(rgb, rgb, rgb, a);
 
+		/// <summary>
+		/// Sets the color used to draw lines and borders around shapes.
+		/// </summary>
+		/// <param name="r">red</param>
+		/// <param name="g">green</param>
+		/// <param name="b">blue</param>
+		/// <param name="a">opacity of the stroke</param>
 		public void Stroke(int r, int g, int b, int a = 255)
 		{
 			PStroke = new Color32((byte)r, (byte)g, (byte)b, (byte)a);
 			DrawStroke = PStrokeWeight != 0 && a != 0;
 		}
 
+		/// <summary>
+		/// Disables filling geometry.
+		/// </summary>
 		public void NoFill()
 		{
 			PFill.a = 0;
 			DrawFill = false;
 		}
 
+		/// <summary>
+		/// Sets the color used to fill shapes.
+		/// </summary>
+		/// <param name="rgb">specifies a value between white and black</param>
+		/// <param name="a">opacity of the stroke</param>
 		public void Fill(int rgb, int a = 255) => Fill(rgb, rgb, rgb, a);
 
+		/// <summary>
+		/// Sets the color used to fill shapes.
+		/// </summary>
+		/// <param name="r">red</param>
+		/// <param name="g">green</param>
+		/// <param name="b">blue</param>
+		/// <param name="a">opacity of the stroke</param>
 		public void Fill(int r, int g, int b, int a = 255)
 		{
 			PFill = new Color32((byte)r, (byte)g, (byte)b, (byte)a);
