@@ -2,7 +2,7 @@
 
 This mini-project aims to recreate some basic processing functions in Unity3D, using a single drag and drop file.
 
-This is made for Unity3D version 2020.x or newer but is largely untested.
+This is made for Unity3D version 2020.2 or newer but is largely untested (It uses C# v8 stuff).
 
 
 ## Useage
