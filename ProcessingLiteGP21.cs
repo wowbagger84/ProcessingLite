@@ -86,6 +86,86 @@ namespace ProcessingLite
 		}
 
 		/// <summary>
+		/// A quad is a quadrilateral, a four sided polygon.
+		/// </summary>
+		/// <param name="x1">x-coordinate of the first corner</param>
+		/// <param name="y1">y-coordinate of the first corner</param>
+		/// <param name="x2">x-coordinate of the second corner</param>
+		/// <param name="y2">y-coordinate of the second corner</param>
+		/// <param name="x3">x-coordinate of the third corner</param>
+		/// <param name="y3">y-coordinate of the third corner</param>
+		/// <param name="x4">x-coordinate of the fourth corner</param>
+		/// <param name="y4">y-coordinate of the fourth corner</param>
+		public void Quad(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
+		{
+			_pShape ??= new PShape();
+			_pShape.ShapeKeys = new List<Vector2>(
+				new[] {
+					new Vector2(x1, y1),
+					new Vector2(x2, y2),
+					new Vector2(x3, y3),
+					new Vector2(x4, y4)
+				});
+			_pShape.ShapeMode = PShapeMode.Default;
+			_pShape.Shape(true, DrawFill);
+		}
+		
+		/// <summary>
+		/// A quad is a quadrilateral, a four sided polygon.
+		/// </summary>
+		/// <param name="pos1">first position</param>
+		/// <param name="pos2">second position</param>
+		/// <param name="pos3">third position</param>
+		/// <param name="pos4">fourth position</param>
+		public void Quad(Vector2 pos1, Vector2 pos2, Vector2 pos3, Vector2 pos4)
+		{
+			_pShape ??= new PShape();
+			_pShape.ShapeKeys = new List<Vector2>(
+				new[] {pos1, pos2, pos3, pos4}
+				);
+			_pShape.ShapeMode = PShapeMode.Default;
+			_pShape.Shape(true, DrawFill);
+		}
+
+		/// <summary>
+		/// A triangle is a plane created by connecting three points. 
+		/// </summary>
+		/// <param name="x1">x-coordinate of the first corner</param>
+		/// <param name="y1">y-coordinate of the first corner</param>
+		/// <param name="x2">x-coordinate of the second corner</param>
+		/// <param name="y2">y-coordinate of the second corner</param>
+		/// <param name="x3">x-coordinate of the third corner</param>
+		/// <param name="y3">y-coordinate of the third corner</param>
+		public void Triangle(float x1, float y1, float x2, float y2, float x3, float y3)
+		{
+			_pShape ??= new PShape();
+			_pShape.ShapeKeys = new List<Vector2>(
+				new[] {
+					new Vector2(x1, y1),
+					new Vector2(x2, y2),
+					new Vector2(x3, y3)
+				});
+			_pShape.ShapeMode = PShapeMode.Default;
+			_pShape.Shape(true, DrawFill);
+		}
+		
+		/// <summary>
+		/// A quad is a quadrilateral, a four sided polygon.
+		/// </summary>
+		/// <param name="pos1">first position</param>
+		/// <param name="pos2">second position</param>
+		/// <param name="pos3">third position</param>
+		public void Triangle(Vector2 pos1, Vector2 pos2, Vector2 pos3)
+		{
+			_pShape ??= new PShape();
+			_pShape.ShapeKeys = new List<Vector2>(
+				new[] {pos1, pos2, pos3}
+			);
+			_pShape.ShapeMode = PShapeMode.Default;
+			_pShape.Shape(true, DrawFill);
+		}
+		
+		/// <summary>
 		/// Draws a rectangle to the screen.
 		/// </summary>
 		/// <param name="x1">x-coordinate of the rectangle</param>
@@ -525,6 +605,7 @@ namespace ProcessingLite
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
+		//TODO: make sure that the normals of the faces are pointing towards the camera
 		private void ShapeFill(Vector2[] shapeKeys, MeshFilter newMeshFilter, MeshRenderer newMeshRenderer)
 		{
 			//Apply shape

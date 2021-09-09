@@ -36,8 +36,10 @@ All these commands might not have full support (Example: rounded corners on rect
   - Ellipse()
   - Line()
   - Point()
+  - Quad()
   - Rect()
   - Square()
+  - Triangle()
 
 #### Color
 - Background()
