@@ -61,9 +61,23 @@ namespace ProcessingLite
 
 		#region draw functions
 
+		/// <summary>
+		/// The Background() function sets the color used for the background.
+		/// </summary>
+		/// <param name="rgb">specifies a value between white and black</param>
 		public void Background(int rgb) => Background(rgb, rgb, rgb);
+		
+		/// <summary>
+		/// The Background() function sets the color used for the background.
+		/// </summary>
+		/// <param name="r">red</param>
+		/// <param name="g">green</param>
+		/// <param name="b">blue</param>
 		public void Background(int r, int g, int b) => Background(new Color32((byte)r, (byte)g, (byte)b, 255));
-
+		
+		/// <summary>
+		/// The Background() function sets the color used for the background.
+		/// </summary>
 		public void Background(Color color)
 		{
 			Camera.main.backgroundColor = color;
@@ -555,6 +569,7 @@ namespace ProcessingLite
 			}
 		}
 
+		//creates a LineRenderer for the outline and a MeshRenderer for the fill.
 		private void DrawShape(Vector2[] shapeKeys, bool loop = false, bool fill = true)
 		{
 			LineRenderer newLineRenderer;
