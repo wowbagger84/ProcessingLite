@@ -12,13 +12,15 @@ namespace ProcessingLite
 	/// </summary>
 	public class GP21 : MonoBehaviour
 	{
-		public const int MAXNumberOfObjects = 500;
+		public const  int   MAXNumberOfObjects = 500;
+		private const float PointSize          = 0.02f;
+		
 		public static float PStrokeWeight = 1;           //Processing
-		public static Color PStroke = Color.white; //Processing
-		public static Color PFill = Color.black; //Processing
+		public static Color PStroke       = Color.white; //Processing
+		public static Color PFill         = Color.black; //Processing
 
-		public static bool DrawStroke = true;
-		public static bool DrawFill = true;
+		internal static bool DrawStroke = true;
+		internal static bool DrawFill   = true;
 
 		//Private variables
 		private PLine _pLine;
@@ -130,6 +132,17 @@ namespace ProcessingLite
 				});
 			_pShape.ShapeMode = PShapeMode.Default;
 			_pShape.Shape(true, false);
+		}
+
+		/// <summary>
+		/// Draws a point, a coordinate in space.
+		/// </summary>
+		/// <param name="x">x-coordinate of the point</param>
+		/// <param name="y">y-coordinate of the point</param>
+		public void Point(int x, int y)
+		{
+			_pRect ??= new PRect();
+			_pRect.Point(x, y, PointSize);
 		}
 
 		/// <summary>
@@ -299,9 +312,9 @@ namespace ProcessingLite
 	{
 		public delegate void LateReset();
 
-		public const float ZOffset = -0.001f; //offset between objects in depth.
-		public static int Background = 2;
-		public static float DrawZOffset; //current offset
+		public const    float ZOffset    = -0.001f; //offset between objects in depth.
+		internal static int   Background = 2;
+		internal static float DrawZOffset; //current offset
 
 		private static Transform _holder;
 
@@ -316,9 +329,9 @@ namespace ProcessingLite
 		private void Start()
 		{
 			var cameraRef = Camera.main;
-			float Width = cameraRef.orthographicSize * cameraRef.aspect;
-			float Height = cameraRef.orthographicSize;
-			cameraRef.transform.Translate(Width, Height, 0);
+			float width = cameraRef.orthographicSize * cameraRef.aspect;
+			float height = cameraRef.orthographicSize;
+			cameraRef.transform.Translate(width, height, 0);
 		}
 
 		public static Transform Holder
@@ -599,6 +612,22 @@ namespace ProcessingLite
 			Transform transform = newSpriteRenderer.transform;
 			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(extent, extent, 1f);
+
+			//Increment to next line in list
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+		}
+		
+		public void Point(float x, float y, float PointSize)
+		{
+			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
+
+			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
+			newSpriteRenderer.color = GP21.PStroke;
+
+			//apply size and position
+			Transform transform = newSpriteRenderer.transform;
+			transform.position   = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
+			transform.localScale = new Vector3(PointSize, PointSize, 1f);
 
 			//Increment to next line in list
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
