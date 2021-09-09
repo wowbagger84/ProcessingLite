@@ -32,11 +32,14 @@ All these commands might not have full support (Example: rounded corners on rect
   - EndShape()
   - Vertex()
 - 2D primitives
-  - Line()
-  - Rect()
-  - Square()
   - Circle()
   - Ellipse()
+  - Line()
+  - Point()
+  - Quad()
+  - Rect()
+  - Square()
+  - Triangle()
 
 #### Color
 - Background()
