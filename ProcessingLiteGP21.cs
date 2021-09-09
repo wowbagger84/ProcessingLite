@@ -411,15 +411,20 @@ namespace ProcessingLite
 		internal static float DrawZOffset; //current offset
 
 		private static Transform _holder;
-
-
+		
+#if !UNITY_2020_2_OR_NEWER && UNITY_EDITOR
 		private ProcessingLiteGP21()
 		{
-#if !UNITY_2020_1_OR_NEWER
-			Debug.LogError("Unity version not supported");
-#endif
+			Debug.LogError("Unity version not supported\nUnity 2020.2 or newer required");
 		}
-
+#endif
+#if UNITY_EDITOR
+		private void Awake()
+		{
+			if (transform.name == "Holder" && (_holder is null || _holder == transform)) return;
+			Debug.LogError("Improper use of ProcessingLiteGP21.");
+		}
+#endif
 		private void Start()
 		{
 			var cameraRef = Camera.main;
@@ -463,6 +468,18 @@ namespace ProcessingLite
 		}
 	}
 
+	#if UNITY_EDITOR
+	[CustomEditor(typeof(ProcessingLiteGP21))]
+	public class ProcessingLiteEditor : Editor
+	{
+		private void OnEnable()
+		{
+			if (Application.isPlaying) return;
+			Debug.LogError("Improper use of ProcessingLiteGP21.\nProcessingLiteGP21 is not allowed to be assigned as a component.");
+		}
+	}
+	#endif
+	
 	public interface IObjectPooling
 	{
 		int CurrentID { get; set; }
