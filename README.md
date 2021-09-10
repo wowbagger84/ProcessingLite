@@ -6,8 +6,8 @@ This is made for Unity3D version 2020.2 or newer but is largely untested (It use
 
 
 ## Usage / Installation
-1. Download the ProcessingLite.cs file.
-2. Drag and drop the ProcessingLite.cs file into your unity project.  
+1. Download the `ProcessingLite.cs` file.
+2. Drag and drop the `ProcessingLite.cs` file into your unity project.  
   (You don't need to add it to your scene)
 3. Change inherence from the class `MonoBehaviour` to `ProcessingLite.GP21`.  
    (You will still have all MonoBehaviour functionality).
