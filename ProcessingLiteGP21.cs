@@ -59,6 +59,26 @@ namespace ProcessingLite
 			}
 		}
 
+		public float MouseX
+		{
+			get
+			{
+				_cameraRef ??= Camera.main;
+				return _cameraRef.ScreenToWorldPoint(Input.mousePosition).x;
+			}
+		}
+
+		public float MouseY
+		{
+			get
+			{
+				_cameraRef ??= Camera.main;
+				return _cameraRef.ScreenToWorldPoint(Input.mousePosition).y;
+			}
+		}
+
+
+
 		#region draw functions
 
 		/// <summary>

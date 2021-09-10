@@ -57,12 +57,15 @@ All these commands will not have full processing support (Example: rounded corne
 - `NoStroke()`
 - `Stroke(color)`
 
+#### Input
+- `MouseX`
+- `MouseY`
 
 ## Features covered by Unity
 Some features from Processing will not be ported over since the already exist in Unity.
 
 - Data
-- Input
+- Input (most of them)
 - Transform
 - Math and Constants
 - PVector
