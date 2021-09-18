@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -617,6 +618,8 @@ namespace ProcessingLite
 			//Check for line from list, re-use or create new.
 			if (CurrentID + 1 > _lines.Count || _lines[CurrentID] is null)
 			{
+				//create a new object with the following components:
+				//LineRenderer, MeshFilter, and MeshRenderer
 				var newObject = new GameObject("Shape" + (_lines.Count + 1).ToString("000"));
 				newObject.transform.parent = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
 				newLineRenderer = newObject.AddComponent<LineRenderer>();
@@ -638,13 +641,13 @@ namespace ProcessingLite
 				newLineRenderer = _lines[CurrentID];
 				newMeshFilter = _mesh[CurrentID];
 				newMeshRenderer = _meshRenderer[CurrentID];
-				newLineRenderer.gameObject.SetActive(true);
+				newLineRenderer.gameObject.SetActive(true); //enable the hole gameObject
 			}
 
 			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
 			newLineRenderer.transform.position = new Vector3(0, 0, ProcessingLiteGP21.DrawZOffset);
 
-			if (GP21.DrawFill && loop && fill) ShapeFill(shapeKeys, newMeshFilter, newMeshRenderer);
+			if (GP21.DrawFill && loop && fill) ShapeFill(shapeKeys, newMeshFilter.mesh, newMeshRenderer);
 
 			if (GP21.DrawStroke)
 			{
@@ -657,30 +660,37 @@ namespace ProcessingLite
 			//Increment to next line in list
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
-
-		//TODO: make sure that the normals of the faces are pointing towards the camera
-		private void ShapeFill(Vector2[] shapeKeys, MeshFilter newMeshFilter, MeshRenderer newMeshRenderer)
+		
+		private void ShapeFill(Vector2[] shapeKeys, Mesh mesh, MeshRenderer meshRenderer)
 		{
+			//reverse if facing the wrong direction so that the mesh will rendered correctly
+			if (Vector2.Angle(shapeKeys[0], shapeKeys[1]) -
+				Vector2.Angle(shapeKeys[0], shapeKeys[2]) > 0) 
+				Array.Reverse(shapeKeys);
+
 			//Apply shape
 			var verts = new Vector3[shapeKeys.Length];
 			for (int i = 0; i < verts.Length; i++) verts[i] = shapeKeys[i];
-
-			newMeshFilter.mesh.vertices = verts;
-			int triLenght = shapeKeys.Length + 1;
+			mesh.vertices = verts;
+			
+			//Map vertices ids to group of 3 making it into a face / triangle
+			int triLenght = shapeKeys.Length - 1;
 			var tri = new List<int>();
-			for (int i = 0; i + 2 < triLenght; i += 2)
+			for (int i = 0; i < triLenght; i += 2)
 			{
 				tri.Add(i);
 				tri.Add(i + 1);
 				tri.Add(i + 2);
 			}
 
+			//unless the shape is a triangle, close the fill. The last index would otherwise be out of bounds.
 			if (shapeKeys.Length > 3)
 				tri[tri.Count - 1] = 0;
-			newMeshFilter.mesh.triangles = tri.ToArray();
+			//Apply faces
+			mesh.triangles = tri.ToArray();
 
 			//Apply settings
-			newMeshRenderer.material.color = GP21.PFill;
+			meshRenderer.material.color = GP21.PFill;
 		}
 
 		private void ShapeStroke(Vector2[] shapeKeys, LineRenderer newLineRenderer)
