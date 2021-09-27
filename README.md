@@ -1,21 +1,20 @@
 # ProcessingLite
 
-This mini-project aims to recreate some basic processing functions in Unity3D, using a single drag and drop file.
+This mini-project aims to recreate some basic processing functions in Unity3D, using a single file that you can just drop in the project.
 
-This is made for Unity3D version 2020.2 or newer but is largely untested (It uses C# v8 stuff).
+This is made for Unity3D version 2020.2 or newer but is largely untested, the limit is because it uses some C# version 8 syntax.
 
 
 ## Usage / Installation
 1. Download the `ProcessingLite.cs` file.
 2. Drag and drop the `ProcessingLite.cs` file into your unity project.  
-  (You don't need to add it to your scene)
+  (Don't add it to your scene! It just need to be in the project)
 3. Change inherence from the class `MonoBehaviour` to `ProcessingLite.GP21`.  
    (You will still have all MonoBehaviour functionality).
-4. Use the supported commands in `Start` and/or `Update` functions.
+4. Use the supported commands, listed below, in the normal Unity `Start` and/or `Update` functions.
 
 
 ## Differences From Processing
-
 Please note that the **origin** of the program will be different from processing. The camera is automatically moved so that origin is placed in the lower left corner of the screen.
 
 The positions is measured in **Unity Units** and **not pixels**.
@@ -24,10 +23,9 @@ The positions is measured in **Unity Units** and **not pixels**.
 
 
 ## Supported Commands
-All these commands will not have full processing support (Example: rounded corners on rectangles). The base version of these commands should work.
+All of the listed commands will not have full processing functionality Example: basic rectangles are supported but not rounded corners. The "basic" version of these commands should work.
 
 [Processing documentation](https://processing.org/reference/)
-
 
 #### Environment
 - `Height`, this returns the height of the screen in Unity-units.
@@ -35,7 +33,7 @@ All these commands will not have full processing support (Example: rounded corne
 
 #### Shape
 - Attributes
-  - `StrokeWeight(line width)`
+  - `StrokeWeight(width)`, sets line width
 - Vertex
   - `BeginShape()`
   - `EndShape()`
@@ -57,24 +55,27 @@ All these commands will not have full processing support (Example: rounded corne
 - `NoStroke()`
 - `Stroke(color)`
 
+#### Text
+- `Text(string, x, y)`, Only supports center align text for now
+- `FontSize(size)`
+
 #### Input
 - `MouseX`
 - `MouseY`
 
+
 ## Features covered by Unity
-Some features from Processing will not be ported over since the already exist in Unity.
+Some features from Processing will not be ported over since the already exist in Unity, and the end goal is to move over to Unity.
 
 - Data
-- Input (most of them)
+- Input (MouseX, MouseY is supported)
 - Transform
 - Math and Constants
 - PVector
 
 
 ## Test Code
-In Unity, create a class called `Test`.
-Change the inheritance from `MonoBehaviour` to `ProcessingLite.GP21`
-Run the program. If you see the word _Hi_, then it's working as intended.
+In Unity, create a class called `Test`. Change the inheritance from `MonoBehaviour` to `ProcessingLite.GP21`. Add the code below, run the program. If you see the word _Hi_ on the screen, then it's working as intended.
 
 ```CS
 using UnityEngine;
