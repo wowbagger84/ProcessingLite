@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.UI;
 
 namespace ProcessingLite
 {
@@ -13,21 +14,22 @@ namespace ProcessingLite
 	/// </summary>
 	public class GP21 : MonoBehaviour
 	{
-		public const  int   MAXNumberOfObjects = 500;
-		private const float PointSize          = 0.02f;
+		public const int MAXNumberOfObjects = 500;
+		private const float PointSize = 0.02f;
 
 		public static float PStrokeWeight = 1;           //Processing
-		public static Color PStroke       = Color.white; //Processing
-		public static Color PFill         = Color.black; //Processing
+		public static Color PStroke = Color.white; //Processing
+		public static Color PFill = Color.black; //Processing
 
 		internal static bool DrawStroke = true;
-		internal static bool DrawFill   = true;
+		internal static bool DrawFill = true;
 
 		//Private variables
 		private PLine _pLine;
 		private PRect _pRect;
 		private PShape _pShape;
 		private PEllipse _pEllipse;
+		private PText _pText;
 
 		private Camera _cameraRef;
 
@@ -40,6 +42,7 @@ namespace ProcessingLite
 			_pRect?.LateUpdate();
 			_pShape?.LateUpdate();
 			_pEllipse?.LateUpdate();
+			_pText?.LateUpdate();
 		}
 
 		public float Width
@@ -156,7 +159,7 @@ namespace ProcessingLite
 		{
 			_pShape ??= new PShape();
 			_pShape.ShapeKeys = new List<Vector2>(
-				new[] {pos1, pos2, pos3, pos4}
+				new[] { pos1, pos2, pos3, pos4 }
 				);
 			_pShape.ShapeMode = PShapeMode.Default;
 			_pShape.Shape(true, DrawFill);
@@ -194,7 +197,7 @@ namespace ProcessingLite
 		{
 			_pShape ??= new PShape();
 			_pShape.ShapeKeys = new List<Vector2>(
-				new[] {pos1, pos2, pos3}
+				new[] { pos1, pos2, pos3 }
 			);
 			_pShape.ShapeMode = PShapeMode.Default;
 			_pShape.Shape(true, DrawFill);
@@ -295,6 +298,20 @@ namespace ProcessingLite
 			}
 			else _pEllipse.Circle(x, y, diameter);
 		}
+
+		/// <summary>
+		/// Draws Text to the screen.
+		/// </summary>
+		/// <param name="string">String to display</param>
+		/// <param name="x">x-coordinate of the text</param>
+		/// <param name="y">y-coordinate of the text</param>
+		public void Text(string text, float x, float y)
+		{
+			_pText ??= new PText();
+			var pos = _cameraRef.WorldToScreenPoint(new Vector3(x, y, 0));
+			_pText.Text(text, pos.x, pos.y);
+		}
+
 
 		/// <summary>
 		/// Using the BeginShape() and EndShape() functions allow creating more complex forms.
@@ -427,11 +444,12 @@ namespace ProcessingLite
 	{
 		public delegate void LateReset();
 
-		public const    float ZOffset    = -0.001f; //offset between objects in depth.
-		internal static int   Background = 2;
+		public const float ZOffset = -0.001f; //offset between objects in depth.
+		internal static int Background = 2;
 		internal static float DrawZOffset; //current offset
 
 		private static Transform _holder;
+		private static Transform _canvas;
 
 #if !UNITY_2020_2_OR_NEWER && UNITY_EDITOR
 		private ProcessingLiteGP21()
@@ -465,6 +483,20 @@ namespace ProcessingLite
 			}
 		}
 
+		public static Transform Canvas
+		{
+			get
+			{
+				if (_canvas is { }) return _canvas;
+				var tmp = new GameObject("Canvas");
+				tmp.AddComponent<Canvas>();
+				tmp.AddComponent<CanvasScaler>();
+				tmp.AddComponent<GraphicRaycaster>();
+				tmp.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+				return _canvas = tmp.transform;
+			}
+		}
+
 		private void LateUpdate()
 		{
 			if (Background > -1)
@@ -489,7 +521,7 @@ namespace ProcessingLite
 		}
 	}
 
-	#if UNITY_EDITOR
+#if UNITY_EDITOR
 	[CustomEditor(typeof(ProcessingLiteGP21))]
 	public class ProcessingLiteEditor : Editor
 	{
@@ -500,7 +532,7 @@ namespace ProcessingLite
 			Destroy(this);
 		}
 	}
-	#endif
+#endif
 
 	public interface IObjectPooling
 	{
@@ -660,19 +692,19 @@ namespace ProcessingLite
 			//Increment to next line in list
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
-		
+
 		private void ShapeFill(Vector2[] shapeKeys, Mesh mesh, MeshRenderer meshRenderer)
 		{
 			//reverse if facing the wrong direction so that the mesh will rendered correctly
 			if (Vector2.Angle(shapeKeys[0], shapeKeys[1]) -
-				Vector2.Angle(shapeKeys[0], shapeKeys[2]) > 0) 
+				Vector2.Angle(shapeKeys[0], shapeKeys[2]) > 0)
 				Array.Reverse(shapeKeys);
 
 			//Apply shape
 			var verts = new Vector3[shapeKeys.Length];
 			for (int i = 0; i < verts.Length; i++) verts[i] = shapeKeys[i];
 			mesh.vertices = verts;
-			
+
 			//Map vertices ids to group of 3 making it into a face / triangle
 			int triLenght = shapeKeys.Length - 1;
 			var tri = new List<int>();
@@ -770,7 +802,7 @@ namespace ProcessingLite
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
-			transform.position   = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
+			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(PointSize, PointSize, 1f);
 
 			//Increment to next line in list
@@ -855,12 +887,70 @@ namespace ProcessingLite
 				return _sprite[CurrentID];
 			}
 
-			var newObject = new GameObject("Rect" + (_sprite.Count + 1).ToString("000"));
+			var newObject = new GameObject("Circle" + (_sprite.Count + 1).ToString("000"));
 			newObject.transform.parent = _holder ? _holder : _holder = ProcessingLiteGP21.Holder;
 			var newSpriteRenderer = newObject.AddComponent<SpriteRenderer>();
 			newSpriteRenderer.sprite = _squareTexture ?? GetSquareTexture();
 			_sprite.Add(newSpriteRenderer);
 			return newSpriteRenderer;
+		}
+	}
+
+	public class PText : IObjectPooling
+	{
+		private readonly List<Text> _text = new List<Text>();
+
+		private Transform _canvas;
+		private Font _font;
+
+		public int CurrentID { get; set; }
+
+		public void LateUpdate()
+		{
+			for (int i = CurrentID; i < _text.Count; i++)
+				if (_text[i].gameObject.activeSelf)
+					_text[i].gameObject.SetActive(false);
+				else break;
+
+			CurrentID = 0;
+		}
+
+		private Font GetFont() => _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+		//AssetDatabase.LoadAssetAtPath<Font>(
+		//	"Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Fonts/Arial.ttf");
+
+		public void Text(string text, float x, float y, bool swapColor = false)
+		{
+			Text newTextComponent = GetTextComponent();
+			newTextComponent.text = text;
+			newTextComponent.color = GP21.PFill;
+			newTextComponent.font = _font ?? GetFont();
+			newTextComponent.alignment = TextAnchor.MiddleCenter;
+
+			//apply size and position
+			RectTransform transform = newTextComponent.GetComponent<RectTransform>();
+			transform.anchorMin = Vector2.zero;
+			transform.anchorMax = Vector2.zero;
+			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
+
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+
+		}
+
+		private Text GetTextComponent()
+		{
+			if (CurrentID < _text.Count && _text[CurrentID] is { })
+			{
+				_text[CurrentID].gameObject.SetActive(true);
+				return _text[CurrentID];
+			}
+
+			var newObject = new GameObject("Text" + (_text.Count + 1).ToString("000"));
+			newObject.transform.parent = _canvas ? _canvas : _canvas = ProcessingLiteGP21.Canvas;
+			var newTextComponent = newObject.AddComponent<Text>();
+
+			_text.Add(newTextComponent);
+			return newTextComponent;
 		}
 	}
 }
