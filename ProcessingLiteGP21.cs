@@ -20,6 +20,7 @@ namespace ProcessingLite
 		public static float PStrokeWeight = 1;           //Processing
 		public static Color PStroke = Color.white; //Processing
 		public static Color PFill = Color.black; //Processing
+		public static int PFontSize = 14;
 
 		internal static bool DrawStroke = true;
 		internal static bool DrawFill = true;
@@ -376,6 +377,15 @@ namespace ProcessingLite
 		{
 			PStrokeWeight = Mathf.Max(weight, 0f);
 			DrawStroke = PStrokeWeight != 0 && PStroke.a != 0;
+		}
+
+		/// <summary>
+		/// Sets the font size of the following text elements.
+		/// </summary>
+		/// <param name="size">font size</param>
+		public void TextSize(int size)
+		{
+			PFontSize = Mathf.Max(size, 0);
 		}
 
 		/// <summary>
@@ -926,6 +936,9 @@ namespace ProcessingLite
 			newTextComponent.color = GP21.PFill;
 			newTextComponent.font = _font ?? GetFont();
 			newTextComponent.alignment = TextAnchor.MiddleCenter;
+			newTextComponent.horizontalOverflow = HorizontalWrapMode.Overflow;
+			newTextComponent.verticalOverflow = VerticalWrapMode.Overflow;
+			newTextComponent.fontSize = GP21.PFontSize;
 
 			//apply size and position
 			RectTransform transform = newTextComponent.GetComponent<RectTransform>();
