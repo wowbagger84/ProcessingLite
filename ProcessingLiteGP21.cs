@@ -258,7 +258,7 @@ namespace ProcessingLite
 		/// </summary>
 		/// <param name="x">x-coordinate of the point</param>
 		/// <param name="y">y-coordinate of the point</param>
-		public void Point(int x, int y)
+		public void Point(float x, float y)
 		{
 			_pRect ??= new PRect();
 			_pRect.Point(x, y, PointSize);
