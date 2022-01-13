@@ -32,7 +32,7 @@ namespace ProcessingLite
 		private PEllipse _pEllipse;
 		private PText _pText;
 
-		private Camera _cameraRef;
+		internal static Camera _cameraRef;
 
 		public GP21() => ProcessingLiteGP21.Resets += ResetRenderers;
 		private void OnDestroy() => ProcessingLiteGP21.Resets -= ResetRenderers;
@@ -899,6 +899,19 @@ namespace ProcessingLite
 
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
 			newSpriteRenderer.color = swapColor ? GP21.PStroke : GP21.PFill;
+			newSpriteRenderer.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+			newSpriteRenderer.sortingOrder = CurrentID;
+
+			//creates sprite mask objects for circles without fill
+			if (!swapColor && !GP21.DrawFill)
+			{
+				newSpriteRenderer.enabled = false;
+				SpriteMask newSpriteMask = newSpriteRenderer.gameObject.AddComponent<SpriteMask>();
+				newSpriteMask.sprite = newSpriteRenderer.sprite;
+				newSpriteMask.isCustomRangeActive = true;
+				newSpriteMask.frontSortingOrder = CurrentID;
+				newSpriteMask.backSortingOrder = CurrentID - 2;
+			}
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
