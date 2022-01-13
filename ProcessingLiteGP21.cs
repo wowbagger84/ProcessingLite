@@ -461,6 +461,8 @@ namespace ProcessingLite
 		private static Transform _holder;
 		private static Transform _canvas;
 
+		private Camera cameraRef;
+
 #if !UNITY_2020_2_OR_NEWER && UNITY_EDITOR
 		private ProcessingLiteGP21()
 		{
@@ -476,7 +478,7 @@ namespace ProcessingLite
 #endif
 		private void Start()
 		{
-			var cameraRef = Camera.main;
+			cameraRef = Camera.main;
 			float width = cameraRef.orthographicSize * cameraRef.aspect;
 			float height = cameraRef.orthographicSize;
 			cameraRef.transform.Translate(width, height, 0);
