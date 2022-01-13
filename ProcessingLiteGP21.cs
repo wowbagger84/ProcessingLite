@@ -546,21 +546,13 @@ namespace ProcessingLite
 	}
 #endif
 
-	public interface IObjectPooling
+	public class ObjectPoolingBase : MonoBehaviour
 	{
-		int CurrentID { get; set; }
-		void LateUpdate();
-	}
-
-	public class PLine : IObjectPooling
-	{
-		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
-
-		private Transform _holder;
-		private Material _material;
+		protected Transform _holder;
+		protected Material _material;
 		public int CurrentID { get; set; }
 
-		public void LateUpdate()
+		internal void UpdateID<T>(List<T> _lines) where T : Component
 		{
 			for (int i = CurrentID; i < _lines.Count; i++)
 				if (_lines[i].gameObject.activeSelf)
@@ -568,6 +560,30 @@ namespace ProcessingLite
 				else break;
 
 			CurrentID = 0;
+		}
+
+		internal void IncrementID() //Increment to next line in list
+		{
+			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
+				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
+
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+		}
+	}
+
+	public interface IObjectPooling
+	{
+		int CurrentID { get; set; }
+		void LateUpdate();
+	}
+
+	public class PLine : ObjectPoolingBase, IObjectPooling
+	{
+		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
+
+		public void LateUpdate()
+		{
+			UpdateID(_lines);
 		}
 
 		private Material GetMaterial() => _material = new Material(Shader.Find("Sprites/Default"));
@@ -609,37 +625,26 @@ namespace ProcessingLite
 
 			newLineRenderer.startColor = newLineRenderer.endColor = GP21.PStroke;
 
-			//Increment to next line in list
-			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
-				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
-
-			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+			IncrementID();
 		}
 	}
 
 	public enum PShapeMode { Default, Lines }
 
-	public class PShape : IObjectPooling
+	public class PShape : ObjectPoolingBase, IObjectPooling
 	{
 		private readonly List<LineRenderer> _lines = new List<LineRenderer>();
 		private readonly List<MeshFilter> _mesh = new List<MeshFilter>();
 		private readonly List<MeshRenderer> _meshRenderer = new List<MeshRenderer>();
 
-		private Transform _holder;
-		private Material _material, _meshMaterial;
+		private Material _meshMaterial;
 
 		public List<Vector2> ShapeKeys;
 		public PShapeMode ShapeMode;
-		public int CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
-			for (int i = CurrentID; i < _lines.Count; i++)
-				if (_lines[i].gameObject.activeSelf)
-					_lines[i].gameObject.SetActive(false);
-				else break;
-
-			CurrentID = 0;
+			UpdateID(_lines);
 		}
 
 		private Material GetMaterial() => _material = new Material(Shader.Find("Sprites/Default"));
@@ -704,11 +709,7 @@ namespace ProcessingLite
 			}
 			else newLineRenderer.positionCount = 0;
 
-			//Increment to next line in list
-			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
-				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
-
-			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+			IncrementID();
 		}
 
 		private void ShapeFill(Vector2[] shapeKeys, Mesh mesh, MeshRenderer meshRenderer)
@@ -758,22 +759,15 @@ namespace ProcessingLite
 	}
 
 
-	public class PRect : IObjectPooling
+	public class PRect : ObjectPoolingBase, IObjectPooling
 	{
 		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
 
-		private Transform _holder;
 		private Sprite _squareTexture;
-		public int CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
-			for (int i = CurrentID; i < _sprite.Count; i++)
-				if (_sprite[i].gameObject.activeSelf)
-					_sprite[i].gameObject.SetActive(false);
-				else break;
-
-			CurrentID = 0;
+			UpdateID(_sprite);
 		}
 
 		private Sprite GetSquareTexture() => _squareTexture = AssetDatabase.LoadAssetAtPath<Sprite>(
@@ -791,11 +785,7 @@ namespace ProcessingLite
 			transform.position = new Vector3((x1 + x2) / 2f, (y1 + y2) / 2f, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(Mathf.Abs(x1 - x2), Mathf.Abs(y1 - y2), 1f);
 
-			//Increment to next line in list
-			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
-				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
-
-			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+			IncrementID();
 		}
 
 		public void Square(float x, float y, float extent)
@@ -810,11 +800,7 @@ namespace ProcessingLite
 			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(extent, extent, 1f);
 
-			//Increment to next line in list
-			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
-				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
-
-			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+			IncrementID();
 		}
 
 		public void Point(float x, float y, float PointSize)
@@ -829,11 +815,7 @@ namespace ProcessingLite
 			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(PointSize, PointSize, 1f);
 
-			//Increment to next line in list
-			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
-				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
-
-			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+			IncrementID();
 		}
 
 		private SpriteRenderer GetSpriteRenderer()
@@ -853,22 +835,15 @@ namespace ProcessingLite
 		}
 	}
 
-	public class PEllipse : IObjectPooling
+	public class PEllipse : ObjectPoolingBase, IObjectPooling
 	{
 		private readonly List<SpriteRenderer> _sprite = new List<SpriteRenderer>();
 
-		private Transform _holder;
 		private Sprite _squareTexture;
-		public int CurrentID { get; set; }
 
 		public void LateUpdate()
 		{
-			for (int i = CurrentID; i < _sprite.Count; i++)
-				if (_sprite[i].gameObject.activeSelf)
-					_sprite[i].gameObject.SetActive(false);
-				else break;
-
-			CurrentID = 0;
+			UpdateID(_sprite);
 		}
 
 		private Sprite GetSquareTexture() => _squareTexture = AssetDatabase.LoadAssetAtPath<Sprite>(
@@ -886,11 +861,7 @@ namespace ProcessingLite
 			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(height, width, 1f);
 
-			//Increment to next line in list
-			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
-				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
-
-			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+			IncrementID();
 		}
 
 		public void Circle(float x, float y, float diameter, bool swapColor = false)
@@ -918,11 +889,7 @@ namespace ProcessingLite
 			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 			transform.localScale = new Vector3(diameter, diameter, 1f);
 
-			//Increment to next line in list
-			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
-				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
-
-			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+			IncrementID();
 		}
 
 		private SpriteRenderer GetSpriteRenderer()
@@ -942,23 +909,16 @@ namespace ProcessingLite
 		}
 	}
 
-	public class PText : IObjectPooling
+	public class PText : ObjectPoolingBase, IObjectPooling
 	{
 		private readonly List<Text> _text = new List<Text>();
 
 		private Transform _canvas;
 		private Font _font;
 
-		public int CurrentID { get; set; }
-
 		public void LateUpdate()
 		{
-			for (int i = CurrentID; i < _text.Count; i++)
-				if (_text[i].gameObject.activeSelf)
-					_text[i].gameObject.SetActive(false);
-				else break;
-
-			CurrentID = 0;
+			UpdateID(_text);
 		}
 
 		private Font GetFont() => _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
@@ -982,10 +942,7 @@ namespace ProcessingLite
 			transform.anchorMax = Vector2.zero;
 			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 
-			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
-				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
-
-			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+			IncrementID();
 		}
 
 		private Text GetTextComponent()
