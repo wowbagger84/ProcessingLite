@@ -14,7 +14,7 @@ namespace ProcessingLite
 	/// </summary>
 	public class GP21 : MonoBehaviour
 	{
-		public const int MAXNumberOfObjects = 500;
+		public const int MAXNumberOfObjects = 1000;
 		private const float PointSize = 0.02f;
 
 		public static float PStrokeWeight = 1;           //Processing
@@ -105,8 +105,9 @@ namespace ProcessingLite
 		/// </summary>
 		public void Background(Color color)
 		{
-			Camera.main.backgroundColor = color;
-			Camera.main.clearFlags = CameraClearFlags.Color;
+			_cameraRef ??= Camera.main;
+			_cameraRef.backgroundColor = color;
+			_cameraRef.clearFlags = CameraClearFlags.Color;
 			ProcessingLiteGP21.Background = Math.Max(1, ProcessingLiteGP21.Background);
 			ProcessingLiteGP21.EarlyReset();
 		}
@@ -291,7 +292,6 @@ namespace ProcessingLite
 		public void Circle(float x, float y, float diameter)
 		{
 			_pEllipse ??= new PEllipse();
-			_pEllipse.Circle(x, y, diameter);
 			if (DrawStroke)
 			{
 				_pEllipse.Circle(x, y, diameter + PStrokeWeight / 8f, true);
@@ -511,7 +511,7 @@ namespace ProcessingLite
 		{
 			if (Background > -1)
 			{
-				if (Background == 0) Camera.main.clearFlags = CameraClearFlags.Nothing;
+				if (Background == 0) cameraRef.clearFlags = CameraClearFlags.Nothing;
 				Background--;
 				if (Background == 1) return;
 			}
@@ -608,6 +608,9 @@ namespace ProcessingLite
 			newLineRenderer.startColor = newLineRenderer.endColor = GP21.PStroke;
 
 			//Increment to next line in list
+			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
+				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
+
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 	}
@@ -700,6 +703,9 @@ namespace ProcessingLite
 			else newLineRenderer.positionCount = 0;
 
 			//Increment to next line in list
+			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
+				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
+
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
@@ -784,6 +790,9 @@ namespace ProcessingLite
 			transform.localScale = new Vector3(Mathf.Abs(x1 - x2), Mathf.Abs(y1 - y2), 1f);
 
 			//Increment to next line in list
+			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
+				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
+
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
@@ -800,6 +809,9 @@ namespace ProcessingLite
 			transform.localScale = new Vector3(extent, extent, 1f);
 
 			//Increment to next line in list
+			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
+				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
+
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
@@ -816,6 +828,9 @@ namespace ProcessingLite
 			transform.localScale = new Vector3(PointSize, PointSize, 1f);
 
 			//Increment to next line in list
+			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
+				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
+
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
@@ -870,6 +885,9 @@ namespace ProcessingLite
 			transform.localScale = new Vector3(height, width, 1f);
 
 			//Increment to next line in list
+			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
+				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
+
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
@@ -886,6 +904,9 @@ namespace ProcessingLite
 			transform.localScale = new Vector3(diameter, diameter, 1f);
 
 			//Increment to next line in list
+			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
+				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
+
 			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
@@ -946,8 +967,10 @@ namespace ProcessingLite
 			transform.anchorMax = Vector2.zero;
 			transform.position = new Vector3(x, y, ProcessingLiteGP21.DrawZOffset);
 
-			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
+			if (CurrentID + 1 == GP21.MAXNumberOfObjects)
+				Debug.LogWarning("Maximum number of obects reached, object culling is occuring!");
 
+			CurrentID = (CurrentID + 1) % GP21.MAXNumberOfObjects;
 		}
 
 		private Text GetTextComponent()
