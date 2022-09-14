@@ -606,6 +606,7 @@ namespace ProcessingLite
 				newLineRenderer.shadowCastingMode = ShadowCastingMode.Off;
 				newLineRenderer.receiveShadows = false;
 				newLineRenderer.useWorldSpace = false;
+				newLineRenderer.sortingOrder = CurrentID;
 				_lines.Add(newLineRenderer);
 			}
 			else
@@ -877,7 +878,9 @@ namespace ProcessingLite
 			if (!swapColor && !GP21.DrawFill)
 			{
 				newSpriteRenderer.enabled = false;
-				SpriteMask newSpriteMask = newSpriteRenderer.gameObject.AddComponent<SpriteMask>();
+				SpriteMask newSpriteMask = newSpriteRenderer.gameObject.GetComponent<SpriteMask>();
+				if (newSpriteMask == null) //Short hand version ??= doesn't work here?
+					newSpriteMask = newSpriteRenderer.gameObject.AddComponent<SpriteMask>();
 				newSpriteMask.sprite = newSpriteRenderer.sprite;
 				newSpriteMask.isCustomRangeActive = true;
 				newSpriteMask.frontSortingOrder = CurrentID;
