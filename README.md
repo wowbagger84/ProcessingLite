@@ -74,6 +74,10 @@ Some features from Processing will not be ported over since the already exist in
 - PVector
 
 
+## Known Issues
+- ProcessingLite creates objects in a way that's invalid and gives a warning in Unity, this can be ignored.
+- Don't change scenes, it will break.
+
 ## Test Code
 In Unity, create a class called `Test`. Change the inheritance from `MonoBehaviour` to `ProcessingLite.GP21`. Add the code below, run the program. If you see the word _Hi_ on the screen, then it's working as intended.
 
