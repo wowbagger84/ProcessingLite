@@ -607,7 +607,7 @@ namespace ProcessingLite
 				newLineRenderer.shadowCastingMode = ShadowCastingMode.Off;
 				newLineRenderer.receiveShadows = false;
 				newLineRenderer.useWorldSpace = false;
-				newLineRenderer.sortingOrder = CurrentID;
+				newLineRenderer.sortingOrder = -(int)(ProcessingLiteGP21.DrawZOffset * 1000);
 				_lines.Add(newLineRenderer);
 			}
 			else
