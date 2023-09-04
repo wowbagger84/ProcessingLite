@@ -500,6 +500,7 @@ namespace ProcessingLite
 			get
 			{
 				if (_canvas is { }) return _canvas;
+				var holderCheck = Holder;
 				var tmp = new GameObject("Canvas");
 				tmp.AddComponent<Canvas>();
 				tmp.AddComponent<CanvasScaler>();
@@ -699,6 +700,7 @@ namespace ProcessingLite
 
 			ProcessingLiteGP21.DrawZOffset += ProcessingLiteGP21.ZOffset;
 			newLineRenderer.transform.position = new Vector3(0, 0, ProcessingLiteGP21.DrawZOffset);
+			newLineRenderer.sortingOrder = -(int)(ProcessingLiteGP21.DrawZOffset *1000);
 
 			if (GP21.DrawFill && loop && fill) ShapeFill(shapeKeys, newMeshFilter.mesh, newMeshRenderer);
 
@@ -780,6 +782,7 @@ namespace ProcessingLite
 
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
 			newSpriteRenderer.color = GP21.PFill;
+			newSpriteRenderer.sortingOrder = -(int)(ProcessingLiteGP21.DrawZOffset * 1000);
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
@@ -795,6 +798,7 @@ namespace ProcessingLite
 
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
 			newSpriteRenderer.color = GP21.PFill;
+			newSpriteRenderer.sortingOrder = -(int)(ProcessingLiteGP21.DrawZOffset * 1000);
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
@@ -810,6 +814,7 @@ namespace ProcessingLite
 
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
 			newSpriteRenderer.color = GP21.PStroke;
+			newSpriteRenderer.sortingOrder = -(int)(ProcessingLiteGP21.DrawZOffset * 1000);
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
@@ -856,6 +861,7 @@ namespace ProcessingLite
 
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
 			newSpriteRenderer.color = swapColor ? GP21.PStroke : GP21.PFill;
+			newSpriteRenderer.sortingOrder = -(int)(ProcessingLiteGP21.DrawZOffset * 1000);
 
 			//apply size and position
 			Transform transform = newSpriteRenderer.transform;
@@ -872,7 +878,7 @@ namespace ProcessingLite
 			SpriteRenderer newSpriteRenderer = GetSpriteRenderer();
 			newSpriteRenderer.color = swapColor ? GP21.PStroke : GP21.PFill;
 			newSpriteRenderer.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
-			newSpriteRenderer.sortingOrder = CurrentID;
+			newSpriteRenderer.sortingOrder = -(int)(ProcessingLiteGP21.DrawZOffset * 1000);
 
 			//creates sprite mask objects for circles without fill
 			if (!swapColor && !GP21.DrawFill)
@@ -883,8 +889,8 @@ namespace ProcessingLite
 					newSpriteMask = newSpriteRenderer.gameObject.AddComponent<SpriteMask>();
 				newSpriteMask.sprite = newSpriteRenderer.sprite;
 				newSpriteMask.isCustomRangeActive = true;
-				newSpriteMask.frontSortingOrder = CurrentID;
-				newSpriteMask.backSortingOrder = CurrentID - 2;
+				newSpriteMask.frontSortingOrder = -(int)(ProcessingLiteGP21.DrawZOffset * 1000) - 1;
+				newSpriteMask.backSortingOrder = -(int)(ProcessingLiteGP21.DrawZOffset * 1000) - 2;
 			}
 
 			//apply size and position
@@ -924,7 +930,7 @@ namespace ProcessingLite
 			UpdateID(_text);
 		}
 
-		private Font GetFont() => _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+		private Font GetFont() => _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 		//AssetDatabase.LoadAssetAtPath<Font>(
 		//	"Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Fonts/Arial.ttf");
 

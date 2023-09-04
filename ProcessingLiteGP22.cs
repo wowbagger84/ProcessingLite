@@ -500,6 +500,7 @@ namespace ProcessingLite
 			get
 			{
 				if (_canvas is { }) return _canvas;
+				var holderCheck = Holder;
 				var tmp = new GameObject("Canvas");
 				tmp.AddComponent<Canvas>();
 				tmp.AddComponent<CanvasScaler>();
@@ -929,7 +930,7 @@ namespace ProcessingLite
 			UpdateID(_text);
 		}
 
-		private Font GetFont() => _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+		private Font GetFont() => _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 		//AssetDatabase.LoadAssetAtPath<Font>(
 		//	"Packages/com.unity.2d.sprite/Editor/ObjectMenuCreation/DefaultAssets/Fonts/Arial.ttf");
 
